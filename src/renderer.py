@@ -24,27 +24,38 @@ class Renderer:
         self._glow_cache.clear()
     
     def draw_gradient_rect(self, color_top: Tuple, color_bottom: Tuple, 
-                           rect: pygame.Rect, vertical: bool = True):
-        """Draw a rectangle with smooth gradient. Optimized with surface caching."""
-        cache_key = (color_top, color_bottom, rect.width, rect.height, vertical)
+                           rect: pygame.Rect, vertical: bool = True, 
+                           border_radius: int = 0):
+        """Draw a rectangle with smooth gradient and optional rounded corners."""
+        # Create a surface for the gradient
+        surf = pygame.Surface((rect.width, max(1, rect.height)), pygame.SRCALPHA)
         
-        if cache_key not in self._gradient_cache:
-            surf = pygame.Surface((rect.width, max(1, rect.height)), pygame.SRCALPHA)
-            
-            if vertical:
-                for i in range(rect.height):
-                    t = i / max(1, rect.height - 1)
-                    color = lerp_color(color_top, color_bottom, t)
-                    pygame.draw.line(surf, color, (0, i), (rect.width, i))
-            else:
-                for i in range(rect.width):
-                    t = i / max(1, rect.width - 1)
-                    color = lerp_color(color_top, color_bottom, t)
-                    pygame.draw.line(surf, color, (i, 0), (i, rect.height))
-            
-            self._gradient_cache[cache_key] = surf
+        if vertical:
+            for i in range(rect.height):
+                t = i / max(1, rect.height - 1)
+                color = lerp_color(color_top, color_bottom, t)
+                pygame.draw.line(surf, color, (0, i), (rect.width, i))
+        else:
+            for i in range(rect.width):
+                t = i / max(1, rect.width - 1)
+                color = lerp_color(color_top, color_bottom, t)
+                pygame.draw.line(surf, color, (i, 0), (i, rect.height))
         
-        self.screen.blit(self._gradient_cache[cache_key], rect.topleft)
+        # If rounded corners, create a mask
+        if border_radius > 0:
+            # Create a mask surface with rounded rectangle
+            mask_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(mask_surf, (255, 255, 255, 255), 
+                           mask_surf.get_rect(), border_radius=border_radius)
+            
+            # Apply mask to gradient
+            final_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            final_surf.blit(surf, (0, 0))
+            final_surf.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+            
+            self.screen.blit(final_surf, rect.topleft)
+        else:
+            self.screen.blit(surf, rect.topleft)
     
     def draw_gradient_circle(self, center_color: Tuple, edge_color: Tuple, 
                              pos: Tuple[int, int], radius: int):
@@ -134,7 +145,7 @@ class Renderer:
                           fill_color_start: Tuple = COLOR_TARGET_GLOW,
                           fill_color_end: Tuple = COLOR_TARGET,
                           border_radius: int = 10):
-        """Draw an animated progress bar with gradient fill."""
+        """Draw an animated progress bar with gradient fill and proper rounded corners."""
         # Shadow
         shadow_rect = rect.copy()
         shadow_rect.x += 2
@@ -142,36 +153,55 @@ class Renderer:
         pygame.draw.rect(self.screen, (20, 20, 30), shadow_rect, 
                         border_radius=border_radius)
         
-        # Background
+        # Background with rounded corners
         pygame.draw.rect(self.screen, bg_color, rect, border_radius=border_radius)
         
-        # Fill
+        # Fill with gradient and proper clipping
         if progress > 0:
             fill_width = int(rect.width * min(1.0, progress))
-            fill_rect = pygame.Rect(rect.x, rect.y, fill_width, rect.height)
-            self.draw_gradient_rect(fill_color_start, fill_color_end, fill_rect)
+            if fill_width > 0:
+                # Create fill surface
+                fill_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                
+                # Draw gradient on fill surface
+                for i in range(fill_width):
+                    t = i / max(1, rect.width - 1)
+                    color = lerp_color(fill_color_start, fill_color_end, t)
+                    pygame.draw.line(fill_surf, color, (i, 0), (i, rect.height))
+                
+                # Create mask for rounded corners
+                mask_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                pygame.draw.rect(mask_surf, (255, 255, 255, 255), 
+                               mask_surf.get_rect(), border_radius=border_radius)
+                
+                # Apply mask
+                fill_surf.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+                
+                # Draw to screen
+                self.screen.blit(fill_surf, rect.topleft)
         
-        # Border
+        # Border with rounded corners
         pygame.draw.rect(self.screen, fill_color_start, rect, 
                         width=2, border_radius=border_radius)
     
     def draw_button_3d(self, rect: pygame.Rect, text: str, font: pygame.font.Font,
                        color_top: Tuple = COLOR_PLATFORM_HIGHLIGHT,
                        color_bottom: Tuple = COLOR_PLATFORM,
-                       pressed: bool = False):
-        """Draw a 3D-style button."""
+                       pressed: bool = False,
+                       border_radius: int = 10):
+        """Draw a 3D-style button with proper rounded corners."""
         offset = 1 if pressed else 3
         
         # Shadow
         shadow_rect = rect.copy()
         shadow_rect.y += offset
-        pygame.draw.rect(self.screen, (30, 35, 50), shadow_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (30, 35, 50), shadow_rect, border_radius=border_radius)
         
-        # Button face
+        # Button face with gradient and rounded corners
         button_rect = rect if pressed else rect
-        self.draw_gradient_rect(color_top, color_bottom, button_rect)
+        self.draw_gradient_rect(color_top, color_bottom, button_rect, border_radius=border_radius)
         pygame.draw.rect(self.screen, COLOR_ANCHOR_GLOW, button_rect, 
-                        width=2, border_radius=10)
+                        width=2, border_radius=border_radius)
         
         # Text
         self.draw_text_centered(text, font, button_rect.center)

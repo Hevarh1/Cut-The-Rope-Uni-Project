@@ -50,10 +50,6 @@ class PayloadDropGame:
         self.settle_timer = 0.0
         self._should_reset = False
         
-        # Mouse input
-        self.mouse_trail: List[Tuple[int, int]] = []
-        self.mouse_down = False
-        
         # UI screens
         self.title_screen = TitleScreen(self.renderer, self.fonts, self.star_field)
         self.level_select = LevelSelectScreen(self.renderer, self.fonts, 
@@ -71,7 +67,6 @@ class PayloadDropGame:
         # Reset state
         self.payload.reset()
         self.particles.clear()
-        self.mouse_trail.clear()
         self.in_target = False
         self.settle_timer = 0.0
         self._should_reset = False
@@ -79,8 +74,10 @@ class PayloadDropGame:
         # Create physics objects
         self.physics.create_payload(level.payload_pos)
         
-        for anchor_pos in level.anchors:
-            self.physics.create_rope(anchor_pos)
+        # Create ropes with letters assigned
+        for i, anchor_pos in enumerate(level.anchors):
+            letter = chr(ord('A') + i) if i < 26 else str(i)
+            self.physics.create_rope(anchor_pos, letter)
         
         self.physics.create_target_box(level.target_pos[0], level.target_pos[1],
                                        level.target_size[0], level.target_size[1])
@@ -103,7 +100,12 @@ class PayloadDropGame:
         self.target = Target(level.target_pos[0], level.target_pos[1],
                             level.target_size[0], level.target_size[1])
         
-        self.anchors = [Anchor(pos) for pos in level.anchors]
+        # Assign letters to anchors (A, B, C, ...)
+        self.anchors = []
+        for i, pos in enumerate(level.anchors):
+            letter = chr(ord('A') + i) if i < 26 else str(i)
+            self.anchors.append(Anchor(pos, letter))
+        
         self.platforms = [Platform(*p) for p in level.platforms]
         self.spikes = [Spike(*s) for s in level.spikes]
     
@@ -159,20 +161,10 @@ class PayloadDropGame:
                         self.state = "level_select"
                     elif event.key == pygame.K_i:
                         self.hud.toggle_instructions()
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.mouse_down = True
-                    self.mouse_trail = [mouse_pos]
-                
-                if event.type == pygame.MOUSEBUTTONUP:
-                    self.mouse_down = False
-                    self.mouse_trail.clear()
-                
-                if event.type == pygame.MOUSEMOTION and self.mouse_down:
-                    self.mouse_trail.append(mouse_pos)
-                    if len(self.mouse_trail) > MOUSE_TRAIL_LENGTH:
-                        self.mouse_trail.pop(0)
-                    self._check_rope_cuts()
+                    else:
+                        # Check if a letter key was pressed to cut rope
+                        if event.unicode and event.unicode.upper().isalpha():
+                            self._cut_rope_by_letter(event.unicode.upper())
             
             elif self.state == "win":
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -182,22 +174,27 @@ class PayloadDropGame:
         if self.state == "level_select":
             self.level_select.update(0, mouse_pos)
     
-    def _check_rope_cuts(self):
-        """Check if mouse trail cuts any ropes."""
-        if len(self.mouse_trail) < 2:
-            return
+    def _cut_rope_by_letter(self, letter: str):
+        """Cut a rope by its assigned letter."""
+        # Find the rope with this letter
+        rope_to_cut = None
+        for rope in self.physics.ropes:
+            if rope.letter == letter:
+                rope_to_cut = rope
+                break
         
-        start = pygame_to_pymunk(self.mouse_trail[-2])
-        end = pygame_to_pymunk(self.mouse_trail[-1])
-        
-        cut_ropes = self.physics.cut_rope_at(start, end)
-        
-        # Emit particles at cut point
-        for rope in cut_ropes:
-            mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
-            self.particles.emit(mid_point, count=10, 
+        # If found, cut it
+        if rope_to_cut:
+            # Get anchor position for particle effect
+            anchor_pos = rope_to_cut.anchor_body.position
+            
+            # Remove the rope
+            self.physics.cut_rope_by_letter(letter)
+            
+            # Emit particles at anchor point
+            self.particles.emit(anchor_pos, count=15, 
                               color=COLOR_PARTICLE_CUT,
-                              speed_range=(50, 120))
+                              speed_range=(50, 150))
     
     def update(self, dt: float):
         """Update game state."""
@@ -322,29 +319,10 @@ class PayloadDropGame:
             pos = pymunk_to_pygame(self.physics.payload_body.position)
             self.payload.draw(self.renderer, pos, PAYLOAD_RADIUS)
         
-        # Mouse trail
-        self._draw_mouse_trail()
-        
         # HUD
         rope_count = len(self.physics.ropes)
         self.hud.draw(self.levels.current_index, rope_count, self.in_target,
                      self.settle_timer, TARGET_SETTLE_TIME)
-    
-    def _draw_mouse_trail(self):
-        """Draw the cutting mouse trail."""
-        if len(self.mouse_trail) > 1:
-            for i in range(len(self.mouse_trail) - 1):
-                t = (i + 1) / len(self.mouse_trail)
-                alpha = int(255 * t)
-                
-                # Glow
-                pygame.draw.line(self.screen, (*COLOR_SLASH_GLOW[:3], alpha // 2),
-                               self.mouse_trail[i], self.mouse_trail[i + 1],
-                               MOUSE_TRAIL_GLOW_WIDTH)
-                # Core
-                pygame.draw.line(self.screen, (*COLOR_SLASH[:3], alpha),
-                               self.mouse_trail[i], self.mouse_trail[i + 1],
-                               MOUSE_TRAIL_WIDTH)
     
     def run(self):
         """Main game loop."""

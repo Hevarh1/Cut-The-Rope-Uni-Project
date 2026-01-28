@@ -182,10 +182,6 @@ class Target:
                                surf.get_rect(), border_radius=12)
                 screen.blit(surf, (rect.x - i, rect.y - i))
         
-        # Inner fill
-        inner = rect.inflate(-8, -8)
-        renderer.draw_gradient_rect(COLOR_TARGET_DARK, COLOR_TARGET_INNER, inner)
-        
         # Three walls (open top box)
         wall_width = 5
         pygame.draw.line(screen, color, 
@@ -205,9 +201,10 @@ class Target:
 class Anchor:
     """Visual anchor point for ropes."""
     
-    def __init__(self, pos: Tuple[float, float]):
+    def __init__(self, pos: Tuple[float, float], letter: str = ""):
         self.pymunk_pos = pos
         self.pygame_pos = pymunk_to_pygame(pos)
+        self.letter = letter
     
     def draw(self, renderer: Renderer):
         """Draw anchor with glow and gradient."""
@@ -225,6 +222,20 @@ class Anchor:
         # Highlight
         highlight_pos = (pos[0] - 3, pos[1] - 3)
         pygame.draw.circle(renderer.screen, COLOR_ANCHOR_GLOW, highlight_pos, 3)
+        
+        # Draw letter label if assigned
+        if self.letter:
+            # Background circle for letter
+            label_radius = 12
+            label_pos = (pos[0], pos[1] - 20)
+            pygame.draw.circle(renderer.screen, (50, 50, 50), label_pos, label_radius)
+            pygame.draw.circle(renderer.screen, (200, 200, 200), label_pos, label_radius, 2)
+            
+            # Draw letter
+            font = pygame.font.Font(None, 20)
+            text_surf = font.render(self.letter, True, (255, 255, 255))
+            text_rect = text_surf.get_rect(center=label_pos)
+            renderer.screen.blit(text_surf, text_rect)
 
 
 class Platform:
@@ -238,8 +249,9 @@ class Platform:
         # Shadow
         renderer.draw_soft_shadow(self.rect, offset=4, blur=2, alpha=50)
         
-        # Gradient fill
-        renderer.draw_gradient_rect(COLOR_PLATFORM_TOP, COLOR_PLATFORM, self.rect)
+        # Gradient fill with rounded corners
+        renderer.draw_gradient_rect(COLOR_PLATFORM_TOP, COLOR_PLATFORM, self.rect, 
+                                   border_radius=6)
         
         # Border
         pygame.draw.rect(renderer.screen, COLOR_PLATFORM_HIGHLIGHT, 

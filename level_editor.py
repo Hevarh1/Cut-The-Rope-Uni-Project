@@ -1,7 +1,7 @@
 """
 Payload Drop - Level Editor
 
-Click to place objects, then copy the generated Python code to add to your game.
+Click to place objects, level data automatically saves to a file.
 
 Controls:
 - 1: Place Payload (red circle)
@@ -11,7 +11,7 @@ Controls:
 - 5: Place Spike (red rectangle)
 - Click: Place selected object
 - Right Click: Delete object at mouse
-- S: Save level code to console
+- S: Save level (prompts for name in console)
 - C: Clear all objects
 - ESC: Quit
 
@@ -23,6 +23,7 @@ For rectangles (Platform/Spike/Target):
 import sys
 import pygame
 from typing import List, Tuple, Optional
+import os
 
 WIDTH, HEIGHT = 1280, 720
 PYMUNK_HEIGHT = 720
@@ -36,6 +37,7 @@ COLOR_PLATFORM = (80, 80, 100)
 COLOR_SPIKE = (180, 40, 40)
 COLOR_TEXT = (230, 230, 240)
 COLOR_GRID = (30, 35, 45)
+COLOR_SUCCESS = (80, 220, 120)
 
 
 def pygame_to_pymunk_y(pygame_y: int) -> float:
@@ -66,6 +68,13 @@ class LevelEditor:
         self.payload_radius = 20
         self.anchor_radius = 8
         self.target_default_size = (120, 80)
+        
+        # Save status
+        self.save_message = ""
+        self.save_message_timer = 0
+        
+        # Level counter
+        self.level_counter = 1
         
     def handle_events(self):
         for event in pygame.event.get():
@@ -209,7 +218,7 @@ class LevelEditor:
             self.objects.remove(obj)
     
     def save_level(self):
-        """Print level code to console."""
+        """Save level automatically with console prompt."""
         payload = None
         anchors = []
         target = None
@@ -241,21 +250,58 @@ class LevelEditor:
                     int(obj.data['h'])
                 ))
         
+        # Prompt in console
         print("\n" + "="*60)
-        print("COPY THIS CODE TO YOUR payload_drop.py:")
+        print("SAVE LEVEL")
         print("="*60)
-        print(f"""
-level_X = LevelData(
+        level_name = input("Enter level name (or press Enter for default): ").strip()
+        if not level_name:
+            level_name = f"Level {self.level_counter}"
+            self.level_counter += 1
+        
+        difficulty_input = input("Enter difficulty (1-3, default 1): ").strip()
+        try:
+            difficulty = int(difficulty_input) if difficulty_input else 1
+            difficulty = max(1, min(3, difficulty))
+        except:
+            difficulty = 1
+        
+        # Generate code
+        level_code = f"""
+# {level_name}
+LevelData(
+    name="{level_name}",
+    difficulty={difficulty},
     payload_pos={payload if payload else (640, 520)},
     anchors={anchors if anchors else [(640, 670)]},
     target_pos={target['pos'] if target else (640, 120)},
     target_size={target['size'] if target else (120, 80)},
     platforms={platforms},
     spikes={spikes}
-)
-""")
+),
+"""
+        
+        # Save to file
+        output_file = "generated_level.txt"
+        with open(output_file, 'w') as f:
+            f.write("="*60 + "\n")
+            f.write("COPY THIS CODE TO src/levels.py\n")
+            f.write("Add it to the levels list in _create_levels()\n")
+            f.write("="*60 + "\n\n")
+            f.write(level_code)
+            f.write("\n" + "="*60 + "\n")
+        
+        self.save_message = f"Saved: {level_name} to {output_file}"
+        self.save_message_timer = 4.0  # Show for 4 seconds
+        
+        # Print to console
+        print("\n" + "="*60)
+        print(f"✓ LEVEL SAVED: {level_name}")
+        print(f"✓ File: {output_file}")
         print("="*60)
-        print("Add this to the create_levels() method return statement.")
+        print(level_code)
+        print("="*60)
+        print("Copy the code above and add it to src/levels.py")
         print("="*60 + "\n")
     
     def draw(self):
@@ -333,6 +379,16 @@ level_X = LevelData(
             
             pygame.draw.rect(self.screen, color, (left, top, width, height), 2)
         
+        # Draw save message if active
+        if self.save_message_timer > 0:
+            msg_surf = self.big_font.render(self.save_message, True, COLOR_SUCCESS)
+            msg_rect = msg_surf.get_rect(center=(WIDTH // 2, 40))
+            # Background
+            bg_rect = msg_rect.inflate(20, 10)
+            pygame.draw.rect(self.screen, (20, 25, 35), bg_rect, border_radius=8)
+            pygame.draw.rect(self.screen, COLOR_SUCCESS, bg_rect, width=2, border_radius=8)
+            self.screen.blit(msg_surf, msg_rect)
+        
         # Draw HUD
         self.draw_hud()
         
@@ -347,7 +403,7 @@ level_X = LevelData(
         instructions = [
             "1: Payload | 2: Anchor | 3: Target | 4: Platform | 5: Spike",
             "Left Click: Place | Right Click: Delete",
-            "S: Save Code | C: Clear All | ESC: Quit",
+            "S: Save Level | C: Clear All | ESC: Quit",
             "",
             "For rectangles: Click twice (top-left, then bottom-right)"
         ]
@@ -380,7 +436,14 @@ level_X = LevelData(
     
     def run(self):
         while True:
-            self.clock.tick(60)
+            dt = self.clock.tick(60) / 1000.0
+            
+            # Update save message timer
+            if self.save_message_timer > 0:
+                self.save_message_timer -= dt
+                if self.save_message_timer <= 0:
+                    self.save_message = ""
+            
             self.handle_events()
             self.draw()
 

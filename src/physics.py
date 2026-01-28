@@ -20,6 +20,7 @@ class Rope:
     payload_body: pymunk.Body = None
     color: Tuple[int, int, int] = COLOR_ROPE
     width: int = ROPE_WIDTH
+    letter: str = ""  # Letter identifier for keyboard cutting
     
     def get_points(self) -> List[Tuple[int, int]]:
         """Get all rope points for drawing."""
@@ -185,13 +186,14 @@ class PhysicsWorld:
         
         return body
     
-    def create_rope(self, anchor_pos: Tuple[float, float]) -> Rope:
+    def create_rope(self, anchor_pos: Tuple[float, float], letter: str = "") -> Rope:
         """Create a rope from anchor to payload."""
         anchor = self.create_anchor(anchor_pos)
         rope = RopeFactory.create_rope(
             self.space, anchor, self.payload_body,
             anchor_pos, self.payload_body.position
         )
+        rope.letter = letter
         self.ropes.append(rope)
         return rope
     
@@ -332,3 +334,18 @@ class PhysicsWorld:
             self.ropes.remove(rope)
         
         return cut_ropes
+    
+    def cut_rope_by_index(self, index: int):
+        """Cut a specific rope by its index."""
+        if 0 <= index < len(self.ropes):
+            rope = self.ropes[index]
+            RopeFactory.destroy_rope(self.space, rope)
+            self.ropes.pop(index)
+    
+    def cut_rope_by_letter(self, letter: str):
+        """Cut a specific rope by its letter identifier."""
+        for i, rope in enumerate(self.ropes):
+            if rope.letter == letter:
+                RopeFactory.destroy_rope(self.space, rope)
+                self.ropes.pop(i)
+                break

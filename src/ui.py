@@ -162,10 +162,11 @@ class LevelSelectScreen:
             shadow_rect.y += shadow_offset
             pygame.draw.rect(screen, (25, 30, 45), shadow_rect, border_radius=12)
             
-            # Button gradient
+            # Button gradient with rounded corners
             color_top = COLOR_TARGET_GLOW if is_hovered else COLOR_PLATFORM_HIGHLIGHT
             color_bottom = COLOR_TARGET if is_hovered else COLOR_PLATFORM
-            self.renderer.draw_gradient_rect(color_top, color_bottom, rect)
+            self.renderer.draw_gradient_rect(color_top, color_bottom, rect, 
+                                            border_radius=12)
             
             # Border
             border_color = COLOR_TARGET_GLOW if is_hovered else COLOR_ANCHOR_GLOW
@@ -310,7 +311,7 @@ class HUD:
     def _draw_instructions(self):
         """Draw the instructions panel."""
         instructions = [
-            "Drag mouse to cut ropes",
+            "Press A, B, C... to cut ropes",
             "Get payload into the target",
             f"Stay for {TARGET_SETTLE_TIME:.0f} seconds to win",
             "",
