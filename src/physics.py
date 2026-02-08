@@ -1,5 +1,5 @@
 """
-Physics components: Rope chains and payload physics.
+Physics components: Rope chains and candy physics.
 """
 
 import math
@@ -17,7 +17,7 @@ class Rope:
     segments: List[pymunk.Body] = field(default_factory=list)
     constraints: List[pymunk.Constraint] = field(default_factory=list)
     anchor_body: pymunk.Body = None
-    payload_body: pymunk.Body = None
+    candy_body: pymunk.Body = None
     color: Tuple[int, int, int] = COLOR_ROPE
     width: int = ROPE_WIDTH
     letter: str = ""  # Letter identifier for keyboard cutting
@@ -33,7 +33,7 @@ class Rope:
             points.append(pymunk_to_pygame(segment.position))
         
         if self.payload_body:
-            points.append(pymunk_to_pygame(self.payload_body.position))
+            points.append(pymunk_to_pygame(self.candy_body.position))
         
         return points
 
@@ -109,7 +109,7 @@ class RopeFactory:
             segments=segments,
             constraints=constraints,
             anchor_body=anchor_body,
-            payload_body=end_body
+            candy_body=end_body
         )
     
     @staticmethod
@@ -134,8 +134,8 @@ class PhysicsWorld:
         self.space = pymunk.Space()
         self.space.gravity = (0, GRAVITY)
         
-        self.payload_body: Optional[pymunk.Body] = None
-        self.payload_shape: Optional[pymunk.Shape] = None
+        self.candy_body: Optional[pymunk.Body] = None
+        self.candy_shape: Optional[pymunk.Shape] = None
         self.ropes: List[Rope] = []
         
         self._should_reset = False
@@ -156,24 +156,24 @@ class PhysicsWorld:
         for constraint in list(self.space.constraints):
             self.space.remove(constraint)
         
-        self.payload_body = None
-        self.payload_shape = None
+        self.candy_body = None
+        self.candy_shape = None
     
-    def create_payload(self, pos: Tuple[float, float]) -> Tuple[pymunk.Body, pymunk.Shape]:
-        """Create the payload ball."""
-        moment = pymunk.moment_for_circle(PAYLOAD_MASS, 0, PAYLOAD_RADIUS)
-        body = pymunk.Body(PAYLOAD_MASS, moment)
+    def create_candy(self, pos: Tuple[float, float]) -> Tuple[pymunk.Body, pymunk.Shape]:
+        """Create the candy ball."""
+        moment = pymunk.moment_for_circle(CANDY_MASS, 0, CANDY_RADIUS)
+        body = pymunk.Body(CANDY_MASS, moment)
         body.position = pos
-        
-        shape = pymunk.Circle(body, PAYLOAD_RADIUS)
-        shape.friction = PAYLOAD_FRICTION
-        shape.elasticity = PAYLOAD_ELASTICITY
-        shape.collision_type = 1  # Payload collision type
-        
+
+        shape = pymunk.Circle(body, CANDY_RADIUS)
+        shape.friction = CANDY_FRICTION
+        shape.elasticity = CANDY_ELASTICITY
+        shape.collision_type = 1  # Candy collision type
+
         self.space.add(body, shape)
-        self.payload_body = body
-        self.payload_shape = shape
-        
+        self.candy_body = body
+        self.candy_shape = shape
+
         return body, shape
     
     def create_anchor(self, pos: Tuple[float, float]) -> pymunk.Body:
@@ -187,11 +187,11 @@ class PhysicsWorld:
         return body
     
     def create_rope(self, anchor_pos: Tuple[float, float], letter: str = "") -> Rope:
-        """Create a rope from anchor to payload."""
+        """Create a rope from anchor to candy."""
         anchor = self.create_anchor(anchor_pos)
         rope = RopeFactory.create_rope(
-            self.space, anchor, self.payload_body,
-            anchor_pos, self.payload_body.position
+            self.space, anchor, self.candy_body,
+            anchor_pos, self.candy_body.position
         )
         rope.letter = letter
         self.ropes.append(rope)
@@ -277,7 +277,7 @@ class PhysicsWorld:
             collision_type_b=3,
             begin=on_spike_hit
         )
-        
+
         # Generic impact for visual effects
         self.space.on_collision(
             collision_type_a=1,
@@ -321,7 +321,7 @@ class PhysicsWorld:
             if not cut and rope.segments:
                 if line_segment_intersection(
                     start, end,
-                    rope.segments[-1].position, rope.payload_body.position
+                    rope.segments[-1].position, rope.candy_body.position
                 ):
                     cut = True
             

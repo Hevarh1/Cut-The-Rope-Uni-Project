@@ -12,11 +12,11 @@ from .utils import pymunk_to_pygame, pygame_to_pymunk
 from .renderer import Renderer, ParticleSystem, StarField
 from .physics import PhysicsWorld
 from .levels import LevelManager
-from .entities import Payload, Target, Anchor, Platform, Spike
+from .entities import Candy, Target, Anchor, Platform, Spike
 from .ui import FontManager, TitleScreen, LevelSelectScreen, WinScreen, HUD
 
 
-class PayloadDropGame:
+class CutTheRopeGame:
     """Main game class."""
     
     def __init__(self):
@@ -39,7 +39,7 @@ class PayloadDropGame:
         self.running = True
         
         # Entities (created per level)
-        self.payload = Payload()
+        self.candy = Candy()
         self.target: Target = None
         self.anchors: List[Anchor] = []
         self.platforms: List[Platform] = []
@@ -65,14 +65,14 @@ class PayloadDropGame:
         self.physics.clear()
         
         # Reset state
-        self.payload.reset()
+        self.candy.reset()
         self.particles.clear()
         self.in_target = False
         self.settle_timer = 0.0
         self._should_reset = False
         
         # Create physics objects
-        self.physics.create_payload(level.payload_pos)
+        self.physics.create_candy(level.candy_pos)
         
         # Create ropes with letters assigned
         for i, anchor_pos in enumerate(level.anchors):
@@ -110,17 +110,17 @@ class PayloadDropGame:
         self.spikes = [Spike(*s) for s in level.spikes]
     
     def _on_spike_hit(self, arbiter, space, data):
-        """Called when payload hits a spike."""
+        """Called when candy hits a spike."""
         self._should_reset = True
         return True
     
     def _on_impact(self, arbiter, space, data):
-        """Called on payload impact for visual effects."""
+        """Called on candy impact for visual effects."""
         try:
             impulse = arbiter.total_impulse.length
             if impulse > 150:
                 contact = arbiter.contact_point_set.points[0].point_a
-                self.payload.on_impact(impulse)
+                self.candy.on_impact(impulse)
                 self.particles.emit(contact, count=min(8, int(impulse / 100)))
         except:
             pass
@@ -218,9 +218,9 @@ class PayloadDropGame:
             self.reset_level()
             return
         
-        # Update payload visuals
-        if self.physics.payload_body:
-            self.payload.update(dt, self.physics.payload_body.angular_velocity)
+        # Update candy visuals
+        if self.physics.candy_body:
+            self.candy.update(dt, self.physics.candy_body.angular_velocity)
         
         # Update particles
         self.particles.update(dt)
@@ -229,22 +229,22 @@ class PayloadDropGame:
         self.physics.step(dt)
         
         # Check bounds
-        if self.physics.payload_body:
-            py = self.physics.payload_body.position.y
+        if self.physics.candy_body:
+            py = self.physics.candy_body.position.y
             if py < -100 or py > PYMUNK_HEIGHT + 100:
                 self.reset_level()
                 return
         
         # Check target state
-        if self.physics.payload_body:
-            px, py = self.physics.payload_body.position
+        if self.physics.candy_body:
+            px, py = self.physics.candy_body.position
             currently_in = self.target.contains_point(px, py)
             
             if currently_in:
                 self.in_target = True
                 
                 # Check velocity for settling
-                velocity = self.physics.payload_body.velocity.length
+                velocity = self.physics.candy_body.velocity.length
                 if velocity < TARGET_SETTLE_VELOCITY:
                     self.settle_timer += dt
                     if self.settle_timer >= TARGET_SETTLE_TIME:
@@ -277,12 +277,8 @@ class PayloadDropGame:
     
     def _draw_playing(self):
         """Draw gameplay."""
-        # Background
-        self.renderer.draw_gradient_rect(COLOR_BG_GRADIENT_TOP, COLOR_BG_GRADIENT_BOTTOM,
-                                        pygame.Rect(0, 0, WIDTH, HEIGHT))
-        
-        # Stars
-        self.star_field.draw(self.screen, time.time())
+        # Simple background
+        self.screen.fill(COLOR_BG)
         
         # Platforms
         for platform in self.platforms:
@@ -299,25 +295,16 @@ class PayloadDropGame:
         for rope in self.physics.ropes:
             points = rope.get_points()
             if len(points) > 1:
-                # Shadow
-                shadow_points = [(p[0] + 2, p[1] + 2) for p in points]
-                pygame.draw.lines(self.screen, COLOR_ROPE_SHADOW, False, 
-                                shadow_points, ROPE_WIDTH)
-                # Main rope
-                pygame.draw.lines(self.screen, COLOR_ROPE, False, 
-                                points, ROPE_WIDTH)
+                pygame.draw.lines(self.screen, COLOR_ROPE, False, points, ROPE_WIDTH)
         
         # Anchors
         for anchor in self.anchors:
             anchor.draw(self.renderer)
         
-        # Particles
-        self.particles.draw(self.renderer, pymunk_to_pygame)
-        
-        # Payload
-        if self.physics.payload_body:
-            pos = pymunk_to_pygame(self.physics.payload_body.position)
-            self.payload.draw(self.renderer, pos, PAYLOAD_RADIUS)
+        # Candy
+        if self.physics.candy_body:
+            pos = pymunk_to_pygame(self.physics.candy_body.position)
+            self.candy.draw(self.renderer, pos, CANDY_RADIUS)
         
         # HUD
         rope_count = len(self.physics.ropes)

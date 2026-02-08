@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Payload Drop - A physics puzzle game
+Cut The Rope - A physics puzzle game
 Entry point for the game.
 """
 
-from src.game import PayloadDropGame
+from src.game import CutTheRopeGame
 
 
 def main():
     """Main entry point."""
-    game = PayloadDropGame()
+    game = CutTheRopeGame()
     game.run()
 
 

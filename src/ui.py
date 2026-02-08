@@ -22,7 +22,7 @@ class FontManager:
 
 
 class TitleScreen:
-    """Animated title screen."""
+    """Simple title screen."""
     
     def __init__(self, renderer: Renderer, fonts: FontManager, star_field: StarField):
         self.renderer = renderer
@@ -35,46 +35,21 @@ class TitleScreen:
     
     def draw(self):
         screen = self.renderer.screen
-        current_time = time.time()
         
-        # Background gradient
-        self.renderer.draw_gradient_rect(COLOR_BG_GRADIENT_TOP, COLOR_BG_GRADIENT_BOTTOM,
-                                        pygame.Rect(0, 0, WIDTH, HEIGHT))
+        # Simple background
+        screen.fill(COLOR_BG)
         
-        # Stars
-        self.star_field.draw(screen, current_time)
-        
-        # Title with glow
-        title_text = "Payload Drop"
+        # Title
+        title_text = "Cut The Rope"
         title_surf = self.fonts.large.render(title_text, True, COLOR_TEXT)
         title_rect = title_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
-        
-        # Animated glow
-        glow_intensity = (math.sin(current_time * 1.5) + 1) / 2 * 0.5 + 0.5
-        for i in range(6, 0, -1):
-            alpha = int(50 * glow_intensity / i)
-            glow_surf = self.fonts.large.render(title_text, True, (*COLOR_TARGET_GLOW[:3], alpha))
-            offset = i * 1.5
-            screen.blit(glow_surf, (title_rect.x + offset, title_rect.y + offset))
-        
-        # Shadow and text
-        shadow_surf = self.fonts.large.render(title_text, True, COLOR_TEXT_SHADOW)
-        screen.blit(shadow_surf, (title_rect.x + 3, title_rect.y + 3))
         screen.blit(title_surf, title_rect)
         
-        # Subtitle with pulse
-        pulse = (math.sin(current_time * 2.5) + 1) / 2
-        alpha = int(180 * pulse + 75)
+        # Subtitle
         subtitle_text = "Click to Start"
         subtitle_surf = self.fonts.normal.render(subtitle_text, True, COLOR_TEXT)
-        subtitle_surf.set_alpha(alpha)
         subtitle_rect = subtitle_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
         screen.blit(subtitle_surf, subtitle_rect)
-        
-        # Version
-        version_text = "v1.0"
-        version_surf = self.fonts.small.render(version_text, True, (100, 110, 130))
-        screen.blit(version_surf, (WIDTH - 60, HEIGHT - 30))
 
 
 class LevelSelectScreen:
@@ -122,12 +97,16 @@ class LevelSelectScreen:
             alpha = int(100 * twinkle)
             size = max(1, int(star['size'] * 0.8))
             surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (255, 255, 255, alpha), (size, size), size)
-            screen.blit(surf, (star['x'] - size, star['y'] - size))
+    def draw(self):
+        screen = self.renderer.screen
+        
+        # Simple background
+        screen.fill(COLOR_BG)
         
         # Title
-        self.renderer.draw_text_centered("Select Level", self.fonts.large, 
-                                        (WIDTH // 2, 80))
+        title_surf = self.fonts.large.render("Select Level", True, COLOR_TEXT)
+        title_rect = title_surf.get_rect(center=(WIDTH // 2, 80))
+        screen.blit(title_surf, title_rect)
         
         # Level buttons
         margin_x = 200
@@ -147,44 +126,29 @@ class LevelSelectScreen:
             rect = pygame.Rect(x, y, button_size, button_size)
             self._button_rects.append(rect)
             
-            # Animation for hovered button
             is_hovered = (i == self._hovered_level)
-            scale = 1.1 if is_hovered else 1.0
             
-            if is_hovered:
-                # Expand rect
-                expand = int((scale - 1) * button_size / 2)
-                rect = rect.inflate(expand * 2, expand * 2)
-            
-            # Shadow
-            shadow_offset = 2 if is_hovered else 4
-            shadow_rect = rect.copy()
-            shadow_rect.y += shadow_offset
-            pygame.draw.rect(screen, (25, 30, 45), shadow_rect, border_radius=12)
-            
-            # Button gradient with rounded corners
-            color_top = COLOR_TARGET_GLOW if is_hovered else COLOR_PLATFORM_HIGHLIGHT
-            color_bottom = COLOR_TARGET if is_hovered else COLOR_PLATFORM
-            self.renderer.draw_gradient_rect(color_top, color_bottom, rect, 
-                                            border_radius=12)
+            # Button background
+            color = COLOR_PLATFORM if not is_hovered else COLOR_PLATFORM_HIGHLIGHT
+            pygame.draw.rect(screen, color, rect)
             
             # Border
-            border_color = COLOR_TARGET_GLOW if is_hovered else COLOR_ANCHOR_GLOW
-            pygame.draw.rect(screen, border_color, rect, width=2, border_radius=12)
+            border_color = COLOR_ANCHOR_GLOW if is_hovered else (100, 100, 120)
+            pygame.draw.rect(screen, border_color, rect, width=2)
             
             # Level number
-            text_color = COLOR_TEXT if is_hovered else COLOR_TEXT
-            self.renderer.draw_text_centered(str(i + 1), self.fonts.normal, 
-                                            rect.center, text_color)
+            text_surf = self.fonts.normal.render(str(i + 1), True, COLOR_TEXT)
+            text_rect = text_surf.get_rect(center=rect.center)
+            screen.blit(text_surf, text_rect)
         
         # Instructions
-        self.renderer.draw_text_centered("Click a level or press 1-6", 
-                                        self.fonts.small, (WIDTH // 2, HEIGHT - 50),
-                                        color=(120, 130, 150))
+        inst_surf = self.fonts.small.render("Click a level or press 1-6", True, (120, 130, 150))
+        inst_rect = inst_surf.get_rect(center=(WIDTH // 2, HEIGHT - 50))
+        screen.blit(inst_surf, inst_rect)
 
 
 class WinScreen:
-    """Victory celebration screen."""
+    """Simple victory screen."""
     
     def __init__(self, renderer: Renderer, fonts: FontManager, star_field: StarField):
         self.renderer = renderer
@@ -197,65 +161,25 @@ class WinScreen:
     
     def draw(self, level_num: int):
         screen = self.renderer.screen
-        current_time = time.time()
         
-        # Background
-        self.renderer.draw_gradient_rect(COLOR_BG_GRADIENT_TOP, COLOR_BG_GRADIENT_BOTTOM,
-                                        pygame.Rect(0, 0, WIDTH, HEIGHT))
+        # Simple background
+        screen.fill(COLOR_BG)
         
-        # Celebration particles
-        for i in range(80):
-            offset = i * 0.15
-            orbit_x = math.sin(current_time * 2 + offset) * (150 + i * 3)
-            orbit_y = math.cos(current_time * 2.5 + offset) * (100 + i * 2)
-            x = WIDTH // 2 + orbit_x
-            y = HEIGHT // 2 + orbit_y
-            
-            size = int(3 + math.sin(current_time * 3 + offset) * 2)
-            alpha = int(220 - i * 2.5)
-            
-            if alpha > 0 and 0 < x < WIDTH and 0 < y < HEIGHT:
-                # Alternate colors
-                if i % 3 == 0:
-                    color = COLOR_PARTICLE_SUCCESS
-                elif i % 3 == 1:
-                    color = COLOR_TARGET_GLOW
-                else:
-                    color = COLOR_PARTICLE_STAR
-                
-                surf = pygame.Surface((size * 2 + 2, size * 2 + 2), pygame.SRCALPHA)
-                pygame.draw.circle(surf, (*color[:3], alpha), (size + 1, size + 1), size)
-                screen.blit(surf, (int(x) - size - 1, int(y) - size - 1))
-        
-        # Title with rainbow glow
+        # Title
         title_text = "Level Complete!"
         title_surf = self.fonts.large.render(title_text, True, COLOR_TARGET_GLOW)
         title_rect = title_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
-        
-        # Animated glow
-        for i in range(8, 0, -1):
-            hue_shift = (current_time * 50 + i * 20) % 360
-            glow_color = pygame.Color(0)
-            glow_color.hsva = (hue_shift, 50, 100, 30 // i)
-            glow_surf = self.fonts.large.render(title_text, True, glow_color)
-            screen.blit(glow_surf, (title_rect.x + i, title_rect.y + i))
-        
-        # Shadow and text
-        shadow_surf = self.fonts.large.render(title_text, True, COLOR_TEXT_SHADOW)
-        screen.blit(shadow_surf, (title_rect.x + 3, title_rect.y + 3))
         screen.blit(title_surf, title_rect)
         
         # Level info
         level_text = f"Level {level_num + 1} Completed"
-        self.renderer.draw_text_centered(level_text, self.fonts.normal,
-                                        (WIDTH // 2, HEIGHT // 2 + 10),
-                                        COLOR_TEXT)
+        level_surf = self.fonts.normal.render(level_text, True, COLOR_TEXT)
+        level_rect = level_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 10))
+        screen.blit(level_surf, level_rect)
         
         # Continue prompt
-        pulse = (math.sin(current_time * 2) + 1) / 2
-        alpha = int(150 * pulse + 100)
-        continue_surf = self.fonts.normal.render("Click to continue", True, COLOR_TEXT)
-        continue_surf.set_alpha(alpha)
+        continue_text = "Click to continue"
+        continue_surf = self.fonts.normal.render(continue_text, True, COLOR_TEXT)
         continue_rect = continue_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 60))
         screen.blit(continue_surf, continue_rect)
 
@@ -275,34 +199,42 @@ class HUD:
         screen = self.renderer.screen
         
         # Level indicator
-        self.renderer.draw_text_with_shadow(f"Level {level_num + 1}", 
-                                           self.fonts.normal, (20, 20))
+        level_surf = self.fonts.normal.render(f"Level {level_num + 1}", True, COLOR_TEXT)
+        screen.blit(level_surf, (20, 20))
         
         # Rope count
-        self.renderer.draw_text_with_shadow(f"Ropes: {rope_count}",
-                                           self.fonts.small, (20, 55))
+        rope_surf = self.fonts.small.render(f"Ropes: {rope_count}", True, COLOR_TEXT)
+        screen.blit(rope_surf, (20, 55))
         
         # Status
         status = "IN TARGET" if in_target else "Outside"
         status_color = COLOR_TARGET_GLOW if in_target else (120, 130, 150)
-        self.renderer.draw_text_with_shadow(f"Status: {status}",
-                                           self.fonts.small, (20, 80),
-                                           color=status_color)
+        status_surf = self.fonts.small.render(f"Status: {status}", True, status_color)
+        screen.blit(status_surf, (20, 80))
         
         # Progress bar when settling
         if in_target and settle_timer > 0:
             progress = min(1.0, settle_timer / settle_time)
             bar_width = 200
             bar_height = 20
-            bar_rect = pygame.Rect(WIDTH // 2 - bar_width // 2, 50, 
-                                  bar_width, bar_height)
+            bar_x = WIDTH // 2 - bar_width // 2
+            bar_y = 50
             
-            self.renderer.draw_progress_bar(bar_rect, progress)
+            # Background
+            pygame.draw.rect(screen, (40, 45, 65), (bar_x, bar_y, bar_width, bar_height))
+            
+            # Fill
+            fill_width = int(bar_width * progress)
+            pygame.draw.rect(screen, COLOR_TARGET_GLOW, (bar_x, bar_y, fill_width, bar_height))
+            
+            # Border
+            pygame.draw.rect(screen, COLOR_TARGET_GLOW, (bar_x, bar_y, bar_width, bar_height), 2)
             
             # Timer text
-            timer_text = f"Settling... {settle_timer:.1f}s / {settle_time:.1f}s"
-            self.renderer.draw_text_with_shadow(timer_text, self.fonts.small,
-                                               (bar_rect.x, bar_rect.bottom + 8))
+            timer_text = f"{settle_timer:.1f}s / {settle_time:.1f}s"
+            timer_surf = self.fonts.small.render(timer_text, True, COLOR_TEXT)
+            timer_rect = timer_surf.get_rect(center=(WIDTH // 2, bar_y + bar_height + 15))
+            screen.blit(timer_surf, timer_rect)
         
         # Instructions panel
         if self.show_instructions:
@@ -312,7 +244,7 @@ class HUD:
         """Draw the instructions panel."""
         instructions = [
             "Press A, B, C... to cut ropes",
-            "Get payload into the target",
+            "Get candy into the target",
             f"Stay for {TARGET_SETTLE_TIME:.0f} seconds to win",
             "",
             "R - Restart | I - Toggle Help | Esc - Menu"
@@ -321,18 +253,21 @@ class HUD:
         # Panel
         panel_width = 380
         panel_height = len(instructions) * 24 + 20
-        panel_rect = pygame.Rect(10, HEIGHT - panel_height - 10, 
-                                panel_width, panel_height)
+        panel_x = 10
+        panel_y = HEIGHT - panel_height - 10
         
-        self.renderer.draw_panel(panel_rect)
+        # Background
+        pygame.draw.rect(self.renderer.screen, (20, 25, 35, 220), 
+                        (panel_x, panel_y, panel_width, panel_height))
+        pygame.draw.rect(self.renderer.screen, (60, 70, 90), 
+                        (panel_x, panel_y, panel_width, panel_height), 2)
         
         # Text
-        y = panel_rect.y + 10
+        y = panel_y + 10
         for line in instructions:
             if line:
-                self.renderer.draw_text_with_shadow(line, self.fonts.small, 
-                                                   (panel_rect.x + 15, y),
-                                                   shadow_offset=1)
+                text_surf = self.fonts.small.render(line, True, COLOR_TEXT)
+                self.renderer.screen.blit(text_surf, (panel_x + 15, y))
             y += 24
     
     def toggle_instructions(self):

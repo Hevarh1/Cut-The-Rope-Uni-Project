@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut The Rope - Game Design Analysis</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="presentation-styles.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title Slide -->
+            <section id="title">
+                <div class="title-header fragment fade-in">
+                    <h1>Cut The Rope</h1>
+                    <h2 class="subtitle">A Game Design Analysis</h2>
+                </div>
+
+                <div class="team-container fragment fade-in">
+                    <div class="team-box">
+                        <div class="team-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <p class="team-label">Presented by</p>
+                        <div class="team-names">
+                            <span class="name-tag name-1">Muhammad Yaseen</span>
+                            <!-- <span class="name-divider">&bull;</span> -->
+                            <span class="name-tag name-2">Hevar Hemin</span>
+                            <!-- <span class="name-divider">&bull;</span> -->
+                            <span class="name-tag name-3">Revar Azim</span>
+                        </div>
+                    </div>
+
+                    <div class="supervisor-box">
+                        <div class="supervisor-icon">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <p class="supervisor-label">Supervisor</p>
+                        <p class="supervisor-name">Mrs. Rina D. Zarro</p>
+                    </div>
+                </div>
+
+                <p class="author fragment fade-in">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    Based on Game Design Lectures
+                </p>
+
+                <div class="title-decorative fragment fade-in">
+                    <span class="dot"></span>
+                    <span class="line"></span>
+                    <span class="dot"></span>
+                </div>
+            </section>
+
+            <!-- Section: Game Overview -->
+            <section id="game-overview" class="section-divider">
+                <h2 class="fragment scale-up">Game Overview</h2>
+            </section>
+
+            <!-- What is Cut The Rope? -->
+            <section id="what-is">
+                <h2>What is Cut The Rope?</h2>
+                <div class="content">
+                    <div class="two-columns">
+                        <div class="column fragment fade-in">
+                            <p class="text-xl"><strong>Cut The Rope</strong> is a physics-based puzzle game where players cut ropes to guide a candy ball to a target zone.</p>
+                            <br>
+                            <div class="callout callout-blue fragment slide-in-left">
+                                <i class="fa-solid fa-gamepad"></i>
+                                <strong>Core Mechanic</strong>
+                                <p>Press letter keys (A, B, C...) to cut ropes and release the candy</p>
+                            </div>
+                        </div>
+                        <div class="column fragment fade-in">
+                            <h3>Key Features</h3>
+                            <ul>
+                                <li class="fragment fade-in"><i class="fa-solid fa-scissors"></i> Rope-cutting physics</li>
+                                <li class="fragment fade-in"><i class="fa-solid fa-arrow-down"></i> Gravity simulation</li>
+                                <li class="fragment fade-in"><i class="fa-solid fa-shapes"></i> 6 progressive levels</li>
+                                <li class="fragment fade-in"><i class="fa-solid fa-flag"></i> Target settling mechanic</li>
+                                <li class="fragment fade-in"><i class="fa-solid fa-triangle-exclamation"></i> Spike obstacles</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Nature of Games -->
+            <section id="nature-section" class="section-divider">
+                <h2 class="fragment scale-up">The Nature of Games</h2>
+                <p class="fragment fade-in">Lecture 1: What Makes Something a Game?</p>
+            </section>
+
+            <!-- Is it a Game? -->
+            <section id="is-it-game">
+                <h2>Is Cut The Rope a Game?</h2>
+                <div class="content">
+                    <div class="callout callout-green fragment slide-in-left">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <strong>Yes! It meets all game criteria:</strong>
+                    </div>
+                    <div class="three-columns">
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-gavel"></i></div>
+                            <h4>Rules</h4>
+                            <p>Cut ropes, avoid spikes, settle in target</p>
+                        </div>
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-bullseye"></i></div>
+                            <h4>Goals</h4>
+                            <p>Guide payload to target zone</p>
+                        </div>
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+                            <h4>Interaction</h4>
+                            <p>Active player participation</p>
+                        </div>
+                    </div>
+                    <div class="three-columns">
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-chart-line"></i></div>
+                            <h4>Feedback</h4>
+                            <p>Visual & physics responses</p>
+                        </div>
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                            <h4>Safe</h4>
+                            <p>Consequence-free failure</p>
+                        </div>
+                        <div class="column box fragment fade-in">
+                            <div class="box-icon"><i class="fa-solid fa-microchip"></i></div>
+                            <h4>Artificial</h4>
+                            <p>Digital simulation</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Game vs Puzzle -->
+            <section id="game-vs-puzzle">
+                <h2>Game vs. Puzzle vs. Toy</h2>
+                <div class="content">
+                    <div class="puzzle-sections">
+                        <div class="puzzle-box fragment fade-in">
+                            <h3><i class="fa-solid fa-puzzle-piece"></i> Puzzle Qualities</h3>
+                            <ul class="text-xl">
+                                <li class="fragment fade-in">Each level has one optimal solution</li>
+                                <li class="fragment fade-in">Solvable through reasoning</li>
+                                <li class="fragment fade-in">Clear win/lose states</li>
+                                <li class="fragment fade-in">No ambiguity in rules</li>
+                            </ul>
+                            <br>
+                            <div class="callout callout-orange fragment slide-in-left">
+                                <strong>Conclusion:</strong> Cut The Rope is primarily a <em>puzzle game</em> with game-like progression elements.
+                            </div>
+                        </div>
+                        <div class="puzzle-box fragment fade-in">
+                            <h3><i class="fa-solid fa-graduation-cap"></i> Learning Curve</h3>
+                            <ul class="text-xl">
+                                <li class="fragment fade-in"><strong>Level 1:</strong> Single rope, simple drop</li>
+                                <li class="fragment fade-in"><strong>Level 2:</strong> Two ropes, swing mechanic</li>
+                                <li class="fragment fade-in"><strong>Level 3:</strong> Obstacles introduced</li>
+                                <li class="fragment fade-in"><strong>Levels 4-6:</strong> Complex multi-rope challenges</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- What Makes Games Fun -->
+            <section id="what-makes-fun">
+                <h2>What Makes Games Fun?</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">Understanding the player experience</p>
+                    <br>
+                    <div class="fun-concepts">
+                        <div class="fun-concept fragment fade-in">
+                            <h4><i class="fa-solid fa-brain"></i> Mental Challenge</h4>
+                            <p class="text-lg">Solving puzzles creates satisfaction through cognitive effort and "aha!" moments</p>
+                        </div>
+                        <div class="fun-concept fragment fade-in">
+                            <h4><i class="fa-solid fa-sync"></i> Feedback Loop</h4>
+                            <p class="text-lg">Immediate responses to actions create engagement and learning</p>
+                        </div>
+                        <div class="fun-concept fragment fade-in">
+                            <h4><i class="fa-solid fa-chart-line"></i> Progress</h4>
+                            <p class="text-lg">Visible advancement and mastery keep players motivated</p>
+                        </div>
+                        <div class="fun-concept fragment fade-in">
+                            <h4><i class="fa-solid fa-magic"></i> Emergence</h4>
+                            <p class="text-lg">Simple rules creating complex, unexpected situations</p>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="callout callout-blue fragment slide-in-left">
+                        <strong>Key Insight:</strong> Fun comes from the player's journey of learning, exploring, and mastering systems—not just the end result.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: MDA Framework -->
+            <section id="mda-section" class="section-divider">
+                <h2 class="fragment scale-up">The MDA Framework</h2>
+                <p class="fragment fade-in">Lecture 2: Mechanics, Dynamics, and Aesthetics</p>
+            </section>
+
+            <!-- Mechanics -->
+            <section id="mechanics">
+                <h2><i class="fa-solid fa-gears"></i> Mechanics</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">The rules and algorithms that define the game</p>
+                    <br>
+                    <div class="mechanics-grid">
+                        <div class="mechanics-item box-outlined fragment fade-in">
+                            <h4><i class="fa-solid fa-scissors"></i> Rope Cutting</h4>
+                            <ul>
+                                <li>Press letter key (A, B, C...)</li>
+                                <li>Each rope has unique identifier</li>
+                                <li>Instant cut with particle effect</li>
+                            </ul>
+                        </div>
+                        <div class="mechanics-item box-outlined fragment fade-in">
+                            <h4><i class="fa-solid fa-arrow-down"></i> Physics Simulation</h4>
+                            <ul>
+                                <li>Gravity: -900 px/s²</li>
+                                <li>Pymunk physics engine</li>
+                                <li>4 sub-steps per frame</li>
+                            </ul>
+                        </div>
+                        <div class="mechanics-item box-outlined fragment fade-in">
+                            <h4><i class="fa-solid fa-flag-checkered"></i> Win Condition</h4>
+                            <ul>
+                                <li>Payload in target zone</li>
+                                <li>Velocity < 80 px/s</li>
+                                <li>Hold for 2 seconds</li>
+                            </ul>
+                        </div>
+                        <div class="mechanics-item box-outlined fragment fade-in">
+                            <h4><i class="fa-solid fa-skull"></i> Lose Conditions</h4>
+                            <ul>
+                                <li>Hit spike obstacles</li>
+                                <li>Fall off screen</li>
+                                <li>R key to reset</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dynamics -->
+            <section id="dynamics">
+                <h2><i class="fa-solid fa-play"></i> Dynamics</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">The run-time behavior of the mechanics working together</p>
+                    <br>
+                    <div class="three-columns">
+                        <div class="column fragment slide-in-left">
+                            <div class="callout callout-blue">
+                                <h4><i class="fa-solid fa-wave-square"></i> Emergent Motion</h4>
+                                <p>Swinging arcs, momentum transfer, chain reactions—complex behavior from simple rules</p>
+                            </div>
+                        </div>
+                        <div class="column fragment slide-in-left">
+                            <div class="callout callout-orange">
+                                <h4><i class="fa-solid fa-clock"></i> Timing Decisions</h4>
+                                <p>When to cut becomes critical; momentum and position matter immensely</p>
+                            </div>
+                        </div>
+                        <div class="column fragment slide-in-left">
+                            <div class="callout callout-green">
+                                <h4><i class="fa-solid fa-redo"></i> Iteration Loop</h4>
+                                <p>Quick reset encourages experimentation and learning from failure</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Aesthetics -->
+            <section id="aesthetics">
+                <h2><i class="fa-solid fa-palette"></i> Aesthetics</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">The emotional responses evoked in the player</p>
+                    <br>
+                    <div class="three-columns">
+                        <div class="column fragment fade-in">
+                            <div class="box box-primary">
+                                <h4><i class="fa-solid fa-trophy"></i> Challenge</h4>
+                                <p class="text-lg">Primary aesthetic—solving increasingly difficult physics puzzles</p>
+                            </div>
+                        </div>
+                        <div class="column fragment fade-in">
+                            <div class="box box-secondary">
+                                <h4><i class="fa-solid fa-lightbulb"></i> Discovery</h4>
+                                <p class="text-lg">Finding the right rope to cut and when to cut it</p>
+                            </div>
+                        </div>
+                        <div class="column fragment fade-in">
+                            <div class="box box-accent">
+                                <h4><i class="fa-solid fa-hand-sparkles"></i> Sensation</h4>
+                                <p class="text-lg">Satisfying physics feedback—bouncing, swinging, settling</p>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="callout callout-gray fragment slide-in-left">
+                        <i class="fa-solid fa-quote-left"></i>
+                        <em>"The payload settles into the target with a satisfying physics response—the 2-second hold creates tension and reward."</em>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MDA Perspectives -->
+            <section id="mda-perspectives">
+                <h2>MDA: Designer vs Player Perspective</h2>
+                <div class="content">
+                    <div class="two-columns">
+                        <div class="column fragment fade-in">
+                            <div class="box box-primary">
+                                <h4><i class="fa-solid fa-pencil-ruler"></i> Designer View</h4>
+                                <p class="text-lg">Works <strong>forward</strong> through MDA</p>
+                                <ul class="text-lg" style="margin-top: 12px;">
+                                    <li><strong>M</strong>echanics → Create rules</li>
+                                    <li><strong>D</strong>ynamics → Emerges from mechanics</li>
+                                    <li><strong>A</strong>esthetics → Player experience</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="column fragment fade-in">
+                            <div class="box box-secondary">
+                                <h4><i class="fa-solid fa-gamepad"></i> Player View</h4>
+                                <p class="text-lg">Experiences <strong>backward</strong> through MDA</p>
+                                <ul class="text-lg" style="margin-top: 12px;">
+                                    <li><strong>A</strong>esthetics → "This is fun!"</li>
+                                    <li><strong>D</strong>ynamics → "I can swing here!"</li>
+                                    <li><strong>M</strong>echanics → "Press A to cut"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="callout callout-blue fragment slide-in-left">
+                        <strong>Critical Insight:</strong> Designers create Mechanics, but players experience Aesthetics. The gap between intent and experience is where great design happens.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schema Theory -->
+            <section id="schema-theory">
+                <h2>Schema Theory & Mental Models</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">How players learn and understand games</p>
+                    <br>
+                    <div class="two-columns">
+                        <div class="column fragment fade-in">
+                            <h3><i class="fa-solid fa-lightbulb"></i> What are Schemas?</h3>
+                            <ul class="text-xl">
+                                <li class="fragment fade-in">Mental frameworks for organizing information</li>
+                                <li class="fragment fade-in">Built through experience and play</li>
+                                <li class="fragment fade-in">Allow players to predict outcomes</li>
+                                <li class="fragment fade-in">Enable strategic thinking</li>
+                            </ul>
+                        </div>
+                        <div class="column fragment fade-in">
+                            <h3><i class="fa-solid fa-graduation-cap"></i> In Cut The Rope</h3>
+                            <ul class="text-xl">
+                                <li class="fragment fade-in">Players learn: "Cut rope → Ball swings"</li>
+                                <li class="fragment fade-in">Players learn: "Momentum carries ball forward"</li>
+                                <li class="fragment fade-in">Players learn: "Timing matters for accuracy"</li>
+                                <li class="fragment fade-in">Players build predictive mental models</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="callout callout-green fragment slide-in-left">
+                        <strong>Design Takeaway:</strong> Good games teach players through patterns, then subvert those patterns for interesting challenges. Cut The Rope does this through level progression.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: 8 Kinds of Fun -->
+            <section id="fun-section" class="section-divider">
+                <h2 class="fragment scale-up">8 Kinds of Fun</h2>
+                <p class="fragment fade-in">Lecture 2: What Makes Games Fun?</p>
+            </section>
+
+            <!-- Kinds of Fun Analysis -->
+            <section id="kinds-of-fun">
+                <h2>Which Kinds of Fun Does Cut The Rope Offer?</h2>
+                <div class="content">
+                    <div class="fun-grid">
+                        <div class="fun-item fun-high fragment fade-in">
+                            <i class="fa-solid fa-trophy"></i>
+                            <strong>Challenge</strong>
+                            <span class="fun-label">PRIMARY</span>
+                        </div>
+                        <div class="fun-item fun-high fragment fade-in">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <strong>Discovery</strong>
+                            <span class="fun-label">STRONG</span>
+                        </div>
+                        <div class="fun-item fun-medium fragment fade-in">
+                            <i class="fa-solid fa-hand-sparkles"></i>
+                            <strong>Sensation</strong>
+                            <span class="fun-label">MODERATE</span>
+                        </div>
+                        <div class="fun-item fun-low fragment fade-in">
+                            <i class="fa-solid fa-book-open"></i>
+                            <strong>Fantasy</strong>
+                            <span class="fun-label">MINIMAL</span>
+                        </div>
+                        <div class="fun-item fun-low fragment fade-in">
+                            <i class="fa-solid fa-book"></i>
+                            <strong>Narrative</strong>
+                            <span class="fun-label">NONE</span>
+                        </div>
+                        <div class="fun-item fun-low fragment fade-in">
+                            <i class="fa-solid fa-users"></i>
+                            <strong>Fellowship</strong>
+                            <span class="fun-label">NONE</span>
+                        </div>
+                        <div class="fun-item fun-low fragment fade-in">
+                            <i class="fa-solid fa-paint-brush"></i>
+                            <strong>Expression</strong>
+                            <span class="fun-label">MINIMAL</span>
+                        </div>
+                        <div class="fun-item fun-medium fragment fade-in">
+                            <i class="fa-solid fa-mug-hot"></i>
+                            <strong>Submission</strong>
+                            <span class="fun-label">PRESENT</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Player Types -->
+            <section id="player-section" class="section-divider">
+                <h2 class="fragment scale-up">The Player</h2>
+                <p class="fragment fade-in">Lecture 3: Who Plays Cut The Rope?</p>
+            </section>
+
+            <!-- Bartle Types -->
+            <section id="bartle-types">
+                <h2>Bartle Player Types</h2>
+                <div class="content">
+                    <div class="bartle-grid">
+                        <div class="bartle-item bartle-high fragment fade-in">
+                            <i class="fa-solid fa-medal"></i>
+                            <h4>Achievers</h4>
+                            <p class="text-lg">Complete all levels, master timing, optimize solutions</p>
+                            <span class="bartle-label">PRIMARY</span>
+                        </div>
+                        <div class="bartle-item bartle-medium fragment fade-in">
+                            <i class="fa-solid fa-compass"></i>
+                            <h4>Explorers</h4>
+                            <p class="text-lg">Experiment with different rope-cutting sequences</p>
+                            <span class="bartle-label">SECONDARY</span>
+                        </div>
+                        <div class="bartle-item bartle-low fragment fade-in">
+                            <i class="fa-solid fa-user-shield"></i>
+                            <h4>Socializers</h4>
+                            <p class="text-muted">No multiplayer or social features</p>
+                            <span class="bartle-label">NOT TARGETED</span>
+                        </div>
+                        <div class="bartle-item bartle-low fragment fade-in">
+                            <i class="fa-solid fa-skull-crossbones"></i>
+                            <h4>Killers</h4>
+                            <p class="text-muted">No competitive or domination elements</p>
+                            <span class="bartle-label">NOT TARGETED</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Flow Theory -->
+            <section id="flow-theory">
+                <h2>Flow Theory: Skill vs Challenge</h2>
+                <div class="content">
+                    <div class="flow-sections">
+                        <div class="flow-text fragment fade-in">
+                            <h3><i class="fa-solid fa-chart-area"></i> The Flow Channel</h3>
+                            <ul class="text-xl">
+                                <li class="fragment fade-in"><strong>Level 1-2:</strong> Easy entry, learning basics</li>
+                                <li class="fragment fade-in"><strong>Level 3-4:</strong> Balanced challenge</li>
+                                <li class="fragment fade-in"><strong>Level 5-6:</strong> High skill requirement</li>
+                            </ul>
+                            <br>
+                            <div class="callout callout-blue fragment slide-in-left">
+                                <strong>Quick Reset (R key)</strong> keeps players in flow by reducing frustration from failure
+                            </div>
+                        </div>
+                        <div class="flow-difficulty fragment fade-in">
+                            <h3><i class="fa-solid fa-stairs"></i> Difficulty Progression</h3>
+                            <div class="difficulty-grid">
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 1</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 20%"></div></div>
+                                    <div class="diff-value">Easy</div>
+                                </div>
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 2</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 30%"></div></div>
+                                    <div class="diff-value">Easy</div>
+                                </div>
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 3</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 50%"></div></div>
+                                    <div class="diff-value">Medium</div>
+                                </div>
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 4</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 50%"></div></div>
+                                    <div class="diff-value">Medium</div>
+                                </div>
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 5</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 75%"></div></div>
+                                    <div class="diff-value">Hard</div>
+                                </div>
+                                <div class="diff-item">
+                                    <div class="diff-label">Level 6</div>
+                                    <div class="diff-bar"><div class="diff-fill" style="width: 90%"></div></div>
+                                    <div class="diff-value">Expert</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Motivation Theory -->
+            <section id="motivation-theory">
+                <h2>Self-Determination Theory (SDT)</h2>
+                <div class="content">
+                    <p class="text-center text-muted fragment fade-in">Three basic psychological needs for motivation</p>
+                    <br>
+                    <div class="motivation-sections">
+                        <div class="motivation-item fragment fade-in">
+                            <div class="motivation-icon"><i class="fa-solid fa-hand-fist"></i></div>
+                            <div class="motivation-content">
+                                <h4>Competence</h4>
+                                <p class="text-lg">Feeling capable and effective</p>
+                                <ul class="text-lg">
+                                    <li>Mastering rope-cutting mechanics</li>
+                                    <li>Completing difficult levels</li>
+                                    <li>Improving timing and accuracy</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="motivation-item fragment fade-in">
+                            <div class="motivation-icon"><i class="fa-solid fa-route"></i></div>
+                            <div class="motivation-content">
+                                <h4>Autonomy</h4>
+                                <p class="text-lg">Feeling in control of actions</p>
+                                <ul class="text-lg">
+                                    <li>Choosing which rope to cut</li>
+                                    <li>Exploring different solutions</li>
+                                    <li>Freedom to experiment</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="motivation-item fragment fade-in">
+                            <div class="motivation-icon"><i class="fa-solid fa-user-group"></i></div>
+                            <div class="motivation-content">
+                                <h4>Relatedness</h4>
+                                <p class="text-lg">Feeling connected to others</p>
+                                <ul class="text-lg">
+                                    <li><strong>Not addressed</strong> in single-player mode</li>
+                                    <li>Potential for level sharing</li>
+                                    <li>Could add leaderboards</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="callout callout-orange fragment slide-in-left">
+                        <strong>Insight:</strong> Cut The Rope strongly supports Competence (progressive challenge) and Autonomy (player choice), but lacks Relatedness elements—an opportunity for expansion.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Elemental Tetrad -->
+            <section id="tetrad-section" class="section-divider">
+                <h2 class="fragment scale-up">The Elemental Tetrad</h2>
+                <p class="fragment fade-in">Lecture 2: Four Components of Game Design</p>
+            </section>
+
+            <!-- Tetrad Breakdown -->
+            <section id="tetrad">
+                <h2>Cut The Rope's Elemental Tetrad</h2>
+                <div class="content">
+                    <div class="tetrad-grid">
+                        <div class="tetrad-item tetrad-mechanics fragment fade-in">
+                            <h4><i class="fa-solid fa-gears"></i> Mechanics</h4>
+                            <ul>
+                                <li>Rope physics simulation</li>
+                                <li>Letter-based cutting</li>
+                                <li>Collision detection</li>
+                                <li>Gravity and momentum</li>
+                            </ul>
+                        </div>
+                        <div class="tetrad-item tetrad-story fragment fade-in">
+                            <h4><i class="fa-solid fa-book-open"></i> Story</h4>
+                            <ul>
+                                <li>Minimal narrative</li>
+                                <li>"Deliver the candy"</li>
+                                <li>Abstract theming</li>
+                                <li>Focus on gameplay</li>
+                            </ul>
+                        </div>
+                        <div class="tetrad-item tetrad-aesthetics fragment fade-in">
+                            <h4><i class="fa-solid fa-palette"></i> Aesthetics</h4>
+                            <ul>
+                                <li>Dark space theme</li>
+                                <li>Coral red payload</li>
+                                <li>Green glow target</li>
+                                <li>Particle effects</li>
+                            </ul>
+                        </div>
+                        <div class="tetrad-item tetrad-technology fragment fade-in">
+                            <h4><i class="fa-solid fa-microchip"></i> Technology</h4>
+                            <ul>
+                                <li>Python 3.14</li>
+                                <li>Pygame rendering</li>
+                                <li>Pymunk physics</li>
+                                <li>60 FPS gameplay</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Summary -->
+            <section id="summary-section" class="section-divider">
+                <h2 class="fragment scale-up">Summary & Takeaways</h2>
+            </section>
+
+            <!-- Key Takeaways -->
+            <section id="takeaways">
+                <h2>Key Design Takeaways</h2>
+                <div class="content">
+                    <div class="takeaways-list">
+                        <div class="takeaway-item fragment slide-in-left">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <div>
+                                <h4>Strong Core Mechanic</h4>
+                                <p>Rope-cutting physics is intuitive, satisfying, and creates emergent complexity</p>
+                            </div>
+                        </div>
+                        <div class="takeaway-item fragment slide-in-left">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <div>
+                                <h4>Clear Feedback Loop</h4>
+                                <p>Immediate visual response + 2-second settle timer creates tension and reward</p>
+                            </div>
+                        </div>
+                        <div class="takeaway-item fragment slide-in-left">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <div>
+                                <h4>Forgiving Failure</h4>
+                                <p>Quick reset keeps players in flow state and encourages experimentation</p>
+                            </div>
+                        </div>
+                        <div class="takeaway-item fragment slide-in-left">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <div>
+                                <h4>Progressive Difficulty</h4>
+                                <p>6 levels introduce mechanics gradually, building player skill organically</p>
+                            </div>
+                        </div>
+                        <div class="takeaway-item fragment slide-in-left">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <div>
+                                <h4>Potential Improvements</h4>
+                                <p>Could add more aesthetics (narrative), social features (level sharing), or expression (custom payloads)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Final Slide -->
+            <section id="end">
+                <h2 class="fragment scale-up">Thank You</h2>
+                <div class="content">
+                    <div class="thank-you-section">
+                        <div class="thank-you-circle fragment fade-in">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </div>
+                        <p class="text-xl text-center fragment fade-in">Cut The Rope: A physics puzzle game demonstrating core game design principles</p>
+                        <div class="thank-you-tags fragment fade-in">
+                            <span class="tag">Mechanics</span>
+                            <span class="tag">Dynamics</span>
+                            <span class="tag">Aesthetics</span>
+                        </div>
+                        <div class="thank-you-tags fragment fade-in">
+                            <span class="tag">Flow</span>
+                            <span class="tag">Challenge</span>
+                            <span class="tag">Discovery</span>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="title-decorative fragment fade-in">
+                        <span class="dot"></span>
+                        <span class="line"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <br>
+                    <p class="text-muted text-center fragment fade-in">Based on Game Design Lectures: Nature of Games, Design Elements, and The Player</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: false,
+            progress: false,
+            slideNumber: true,
+            hash: true,
+            transition: 'slide',
+            center: false,
+            width: 1280,
+            height: 720,
+            fragmentInURL: true,
+            slideNumber: 'c/t'
+        });
+    </script>
+</body>
+</html>

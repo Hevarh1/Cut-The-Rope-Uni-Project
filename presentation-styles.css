@@ -1,0 +1,1251 @@
+/* =============================================================================
+   CUT THE ROPE PRESENTATION STYLES
+   Dark space theme inspired by the game's aesthetic
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Open+Sans:wght@300;400;600&display=swap');
+
+/* =============================================================================
+   CSS VARIABLES - Game-inspired color palette
+   ============================================================================= */
+:root {
+    /* Background - Deep space theme from game */
+    --background-color: #191c28;
+    --background-dark: #0f1219;
+    --background-gradient-start: #232840;
+    --background-gradient-end: #191c28;
+
+    /* Typography - Professional sans-serif */
+    --heading-font: "Montserrat", "Arial Black", sans-serif;
+    --body-font: "Open Sans", Arial, sans-serif;
+
+    /* Font sizes - Larger for readability */
+    --text-size: 14pt;
+    --h1-size: 42pt;
+    --h2-size: 32pt;
+    --h3-size: 20pt;
+    --h4-size: 16pt;
+
+    /* Game-inspired colors */
+    --primary-color: #ff6b6b;
+    --secondary-color: #50dc8c;
+    --accent-color: #a07850;
+    --text-color: #f0f5ff;
+    --muted-color: #8892b0;
+    --box-bg: #252a3d;
+    --box-border: #3a4158;
+}
+
+/* =============================================================================
+   BASE STYLES
+   ============================================================================= */
+.reveal {
+    font-family: var(--body-font);
+    font-size: var(--text-size);
+    color: var(--text-color);
+    background: var(--background-color);
+}
+
+.reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+    font-family: var(--heading-font);
+    font-weight: 600;
+    text-transform: none;
+    color: var(--text-color);
+    text-shadow: none;
+    margin: 0 0 14px 0;
+}
+
+.reveal h1 {
+    font-size: var(--h1-size);
+}
+
+.reveal h2 {
+    font-size: var(--h2-size);
+}
+
+.reveal h3 {
+    font-size: var(--h3-size);
+}
+
+.reveal h4 {
+    font-size: var(--h4-size);
+}
+
+.reveal p, .reveal li {
+    font-size: var(--text-size);
+    color: var(--text-color);
+    line-height: 1.5;
+    margin: 0 0 10px 0;
+}
+
+/* =============================================================================
+   SLIDE LAYOUT - Optimized for no overflow
+   ============================================================================= */
+.reveal .slides section {
+    padding: 25px 45px;
+    text-align: left;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.reveal .slides section .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 16px;
+    flex: 1;
+}
+
+.reveal .slides {
+    text-align: left;
+}
+
+/* Centered text */
+.reveal .text-center {
+    text-align: center;
+}
+
+.reveal .text-muted {
+    color: var(--muted-color);
+}
+
+/* Text size utilities */
+.text-lg {
+    font-size: 15pt;
+}
+
+.text-xl {
+    font-size: 16pt;
+}
+
+.text-2xl {
+    font-size: 18pt;
+}
+
+/* =============================================================================
+   TITLE SLIDE - With boxes, colors, and better alignment
+   ============================================================================= */
+#title {
+    text-align: center;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 60px !important;
+}
+
+.title-header {
+    margin-bottom: 40px;
+}
+
+#title h1 {
+    color: var(--primary-color);
+    font-size: 64pt;
+    margin: 0 0 12px 0;
+    text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
+}
+
+#title .subtitle {
+    color: var(--secondary-color);
+    font-size: 28pt;
+    font-weight: 300;
+    margin: 0;
+}
+
+/* Container for the two boxes */
+.team-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+    margin: 0 auto 40px auto;
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Shared box styling */
+.team-box,
+.supervisor-box {
+    flex: 1;
+    background: linear-gradient(135deg, var(--box-bg) 0%, rgba(37, 42, 61, 0.8) 100%);
+    border: 2px solid var(--box-border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-box:hover,
+.supervisor-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.team-box {
+    border-color: rgba(255, 107, 107, 0.3);
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(37, 42, 61, 0.9) 100%);
+}
+
+.supervisor-box {
+    border-color: rgba(80, 220, 140, 0.3);
+    background: linear-gradient(135deg, rgba(80, 220, 140, 0.08) 0%, rgba(37, 42, 61, 0.9) 100%);
+}
+
+/* Icon styling */
+.team-icon,
+.supervisor-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.team-icon {
+    color: var(--primary-color);
+}
+
+.supervisor-icon {
+    color: var(--secondary-color);
+}
+
+/* Labels */
+.team-label,
+.supervisor-label {
+    color: var(--muted-color);
+    font-size: 11pt;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+
+/* Team names with color distinction */
+.team-names {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.name-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14pt;
+    font-weight: 500;
+    transition: transform 0.2s ease;
+}
+
+.name-tag:hover {
+    transform: scale(1.05);
+}
+
+.name-1 {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.25) 0%, rgba(255, 107, 107, 0.15) 100%);
+    color: #ffb4b4;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.name-2 {
+    background: linear-gradient(135deg, rgba(80, 220, 140, 0.25) 0%, rgba(80, 220, 140, 0.15) 100%);
+    color: #a0ffc8;
+    border: 1px solid rgba(80, 220, 140, 0.3);
+}
+
+.name-3 {
+    background: linear-gradient(135deg, rgba(160, 120, 80, 0.25) 0%, rgba(160, 120, 80, 0.15) 100%);
+    color: #e0c8a8;
+    border: 1px solid rgba(160, 120, 80, 0.3);
+}
+
+.name-divider {
+    color: var(--muted-color);
+    font-size: 12px;
+    margin: 0 4px;
+}
+
+/* Supervisor name */
+.supervisor-name {
+    color: var(--secondary-color);
+    font-size: 16pt;
+    font-weight: 500;
+    margin: 8px 0 0 0;
+}
+
+/* Author section */
+#title .author {
+    color: var(--muted-color);
+    font-size: 14pt;
+    margin: 0 0 20px 0;
+}
+
+#title .author i {
+    color: var(--accent-color);
+    margin-right: 8px;
+}
+
+/* Decorative dots and line */
+.title-decorative {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 0;
+}
+
+.title-decorative .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-color);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.title-decorative .dot:last-child {
+    background: var(--secondary-color);
+    box-shadow: 0 0 20px var(--secondary-color);
+    animation-delay: 1s;
+}
+
+.title-decorative .line {
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* =============================================================================
+   SECTION DIVIDERS - Centered and bigger
+   ============================================================================= */
+.section-divider {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    background: linear-gradient(135deg, var(--background-gradient-start), var(--background-gradient-end));
+    height: 100%;
+    padding: 0 !important;
+}
+
+.section-divider h2 {
+    color: var(--secondary-color);
+    font-size: 64pt;
+    text-shadow: 0 0 40px rgba(80, 220, 140, 0.4);
+    margin: 0;
+}
+
+.section-divider p {
+    color: var(--muted-color);
+    font-size: 22pt;
+    margin-top: 20px;
+}
+
+/* =============================================================================
+   BOXES AND CONTAINERS - Narrower to prevent overflow
+   ============================================================================= */
+.box {
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+}
+
+.box-outlined {
+    background: transparent;
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+}
+
+.box-primary {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.12), rgba(255, 107, 107, 0.04));
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+}
+
+.box-secondary {
+    background: linear-gradient(135deg, rgba(80, 220, 140, 0.12), rgba(80, 220, 140, 0.04));
+    border: 2px solid var(--secondary-color);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+}
+
+.box-accent {
+    background: linear-gradient(135deg, rgba(160, 120, 80, 0.12), rgba(160, 120, 80, 0.04));
+    border: 2px solid var(--accent-color);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+}
+
+.box p, .box li {
+    color: var(--text-color);
+    font-size: 12pt;
+}
+
+.box-icon {
+    font-size: 24pt;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+/* =============================================================================
+   CALLOUTS - Narrower to prevent overflow
+   ============================================================================= */
+.callout {
+    border-left: 4px solid var(--primary-color);
+    padding: 12px 16px;
+    margin: 10px 0;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 0 10px 10px 0;
+}
+
+.callout i {
+    margin-right: 8px;
+    font-size: 14pt;
+}
+
+.callout p {
+    margin: 6px 0 0 0;
+}
+
+.callout-blue {
+    border-left-color: #5ea8a7;
+    background: rgba(94, 168, 167, 0.1);
+}
+
+.callout-orange {
+    border-left-color: #ff9800;
+    background: rgba(255, 152, 0, 0.1);
+}
+
+.callout-green {
+    border-left-color: var(--secondary-color);
+    background: rgba(80, 220, 140, 0.1);
+}
+
+.callout-gray {
+    border-left-color: var(--muted-color);
+    background: rgba(136, 146, 176, 0.1);
+}
+
+/* =============================================================================
+   COLUMN LAYOUTS - Reduced gaps to prevent overflow
+   ============================================================================= */
+.two-columns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+}
+
+.three-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================================================
+   MECHANICS GRID - 2x2 layout, no overlap
+   ============================================================================= */
+.mechanics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.mechanics-item {
+    background: transparent;
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 18px 16px;
+    height: auto;
+}
+
+.mechanics-item h4 {
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    margin-top: 0;
+    font-size: 16pt;
+}
+
+.mechanics-item ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.mechanics-item li {
+    font-size: 13pt;
+    margin-bottom: 8px;
+}
+
+.column h3 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+    font-size: 17pt;
+}
+
+/* =============================================================================
+   PUZZLE SECTIONS - Vertical layout, bigger text
+   ============================================================================= */
+.puzzle-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.puzzle-box {
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.puzzle-box h3 {
+    color: var(--secondary-color);
+    font-size: 20pt;
+    margin-bottom: 12px;
+}
+
+.puzzle-box ul li {
+    font-size: 15pt;
+    margin-bottom: 8px;
+}
+
+/* =============================================================================
+   FUN CONCEPTS - What makes games fun
+   ============================================================================= */
+.fun-concepts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.fun-concept {
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.fun-concept h4 {
+    color: var(--primary-color);
+    font-size: 16pt;
+    margin-bottom: 8px;
+}
+
+.fun-concept h4 i {
+    margin-right: 6px;
+}
+
+.fun-concept p {
+    font-size: 13pt;
+}
+
+/* =============================================================================
+   MOTIVATION SECTIONS - Self-Determination Theory - One row layout
+   ============================================================================= */
+.motivation-sections {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.motivation-item {
+    background: var(--box-bg);
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    height: auto;
+}
+
+.motivation-icon {
+    font-size: 22pt;
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+}
+
+.motivation-content {
+    flex: 1;
+}
+
+.motivation-item h4 {
+    color: var(--primary-color);
+    font-size: 15pt;
+    margin-bottom: 4px;
+}
+
+.motivation-item p {
+    font-size: 12pt;
+    margin-bottom: 6px;
+}
+
+.motivation-item ul {
+    text-align: left;
+    padding-left: 18px;
+    margin: 0;
+}
+
+.motivation-item li {
+    font-size: 11pt;
+    margin-bottom: 3px;
+}
+
+.column h4 {
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.column ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.column li {
+    margin-bottom: 5px;
+    font-size: 12pt;
+}
+
+.column i {
+    color: var(--secondary-color);
+    margin-right: 6px;
+    font-size: 11pt;
+}
+
+/* =============================================================================
+   8 KINDS OF FUN GRID - 3 columns, bigger boxes
+   ============================================================================= */
+.fun-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.fun-item {
+    background: var(--box-bg);
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    position: relative;
+}
+
+.fun-item i {
+    font-size: 26pt;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.fun-item strong {
+    display: block;
+    font-size: 14pt;
+    margin-bottom: 6px;
+}
+
+.fun-label {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10pt;
+    font-weight: 600;
+}
+
+.fun-high {
+    border-color: var(--secondary-color);
+    background: rgba(80, 220, 140, 0.1);
+}
+
+.fun-high .fun-label {
+    background: var(--secondary-color);
+    color: var(--background-dark);
+}
+
+.fun-high i, .fun-high strong {
+    color: var(--secondary-color);
+}
+
+.fun-medium {
+    border-color: var(--accent-color);
+    background: rgba(160, 120, 80, 0.1);
+}
+
+.fun-medium .fun-label {
+    background: var(--accent-color);
+    color: var(--background-dark);
+}
+
+.fun-medium i, .fun-medium strong {
+    color: var(--accent-color);
+}
+
+.fun-low {
+    border-color: var(--muted-color);
+    background: rgba(136, 146, 176, 0.1);
+}
+
+.fun-low .fun-label {
+    background: var(--muted-color);
+    color: var(--background-dark);
+}
+
+.fun-low i, .fun-low strong {
+    color: var(--muted-color);
+}
+
+/* =============================================================================
+   BARTLE PLAYER TYPES GRID - 2 columns, bigger boxes
+   ============================================================================= */
+.bartle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.bartle-item {
+    background: var(--box-bg);
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+}
+
+.bartle-item i {
+    font-size: 24pt;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.bartle-item h4 {
+    margin-bottom: 10px;
+    font-size: 17pt;
+}
+
+.bartle-item p {
+    font-size: 13pt;
+}
+
+.bartle-label {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 10pt;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.bartle-high {
+    border-color: var(--secondary-color);
+    background: rgba(80, 220, 140, 0.1);
+}
+
+.bartle-high .bartle-label {
+    background: var(--secondary-color);
+    color: var(--background-dark);
+}
+
+.bartle-high i, .bartle-high h4 {
+    color: var(--secondary-color);
+}
+
+.bartle-medium {
+    border-color: var(--accent-color);
+    background: rgba(160, 120, 80, 0.1);
+}
+
+.bartle-medium .bartle-label {
+    background: var(--accent-color);
+    color: var(--background-dark);
+}
+
+.bartle-medium i, .bartle-medium h4 {
+    color: var(--accent-color);
+}
+
+.bartle-low {
+    border-color: var(--muted-color);
+    background: rgba(136, 146, 176, 0.05);
+}
+
+.bartle-low .bartle-label {
+    background: var(--muted-color);
+    color: var(--background-dark);
+}
+
+.bartle-low i, .bartle-low h4 {
+    color: var(--muted-color);
+}
+
+/* =============================================================================
+   DIFFICULTY BARS - Bigger text, 2x3 grid layout
+   ============================================================================= */
+.difficulty-bars {
+    background: var(--box-bg);
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.diff-row {
+    display: grid;
+    grid-template-columns: 75px 1fr 65px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.diff-row span:first-child {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 13pt;
+}
+
+.diff-bar {
+    height: 18px;
+    background: rgba(136, 146, 176, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.diff-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    border-radius: 8px;
+    transition: width 0.5s ease;
+}
+
+.diff-row span:last-child {
+    font-size: 12pt;
+    color: var(--muted-color);
+}
+
+/* Flow theory sections - vertical layout */
+.flow-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.flow-text h3, .flow-difficulty h3 {
+    color: var(--secondary-color);
+    font-size: 18pt;
+    margin-bottom: 12px;
+}
+
+.flow-text ul li {
+    font-size: 14pt;
+    margin-bottom: 8px;
+}
+
+/* Difficulty grid - 2 rows of 3 items */
+.difficulty-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.diff-item {
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.diff-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 11pt;
+    margin-bottom: 6px;
+}
+
+.diff-item .diff-bar {
+    height: 12px;
+    margin-bottom: 6px;
+}
+
+.diff-value {
+    font-size: 10pt;
+    color: var(--muted-color);
+}
+
+/* =============================================================================
+   ELEMENTAL TETRAD GRID - Bigger text
+   ============================================================================= */
+.tetrad-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.tetrad-item {
+    background: var(--box-bg);
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.tetrad-item h4 {
+    margin-bottom: 10px;
+    font-size: 17pt;
+}
+
+.tetrad-item i {
+    margin-right: 6px;
+}
+
+.tetrad-item ul {
+    margin: 0;
+    padding-left: 22px;
+}
+
+.tetrad-item li {
+    margin-bottom: 5px;
+    font-size: 12pt;
+}
+
+.tetrad-mechanics {
+    border-color: #5ea8a7;
+}
+
+.tetrad-mechanics h4, .tetrad-mechanics i {
+    color: #5ea8a7;
+}
+
+.tetrad-story {
+    border-color: #ff9800;
+}
+
+.tetrad-story h4, .tetrad-story i {
+    color: #ff9800;
+}
+
+.tetrad-aesthetics {
+    border-color: var(--secondary-color);
+}
+
+.tetrad-aesthetics h4, .tetrad-aesthetics i {
+    color: var(--secondary-color);
+}
+
+.tetrad-technology {
+    border-color: var(--accent-color);
+}
+
+.tetrad-technology h4, .tetrad-technology i {
+    color: var(--accent-color);
+}
+
+/* =============================================================================
+   TAKEAWAYS LIST
+   ============================================================================= */
+.takeaways-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.takeaway-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--box-bg);
+    border: 2px solid var(--box-border);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.takeaway-item i {
+    font-size: 18pt;
+    color: var(--secondary-color);
+    flex-shrink: 0;
+}
+
+.takeaway-item h4 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    font-size: 14pt;
+}
+
+.takeaway-item p {
+    font-size: 11pt;
+    margin: 0;
+}
+
+/* =============================================================================
+   FINAL SLIDE - With animations
+   ============================================================================= */
+#end {
+    text-align: center;
+}
+
+#end h2 {
+    color: var(--secondary-color);
+    font-size: 54pt;
+    margin-bottom: 30px;
+}
+
+.thank-you-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.thank-you-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.thank-you-circle i {
+    font-size: 50pt;
+    color: var(--background-dark);
+}
+
+.thank-you-tags {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.tag {
+    background: var(--box-bg);
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 13pt;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+/* Thank You animations */
+.reveal .slides section #end .thank-you-circle.visible {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.reveal .slides section #end .tag.visible {
+    animation: tagFadeIn 0.5s ease forwards;
+    opacity: 0;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+.reveal .slides section #end .tag.visible:nth-child(6) {
+    animation-delay: 0.5s;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 20px rgba(255, 107, 107, 0);
+    }
+}
+
+@keyframes tagFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================================
+   REVEAL.JS OVERRIDES
+   ============================================================================= */
+.reveal .progress {
+    color: var(--primary-color);
+}
+
+.reveal .controls {
+    color: var(--secondary-color);
+}
+
+.reveal .slide-number {
+    color: var(--muted-color);
+}
+
+/* Links */
+.reveal a {
+    color: var(--secondary-color);
+}
+
+.reveal a:hover {
+    color: var(--primary-color);
+}
+
+/* Blockquotes */
+.reveal blockquote {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 16px;
+    margin: 12px 0;
+    font-style: italic;
+    background: none;
+    box-shadow: none;
+    width: 100%;
+    color: var(--text-color);
+    font-size: 13pt;
+}
+
+.reveal blockquote cite {
+    display: block;
+    margin-top: 8px;
+    font-style: normal;
+    color: var(--muted-color);
+    font-size: 12pt;
+}
+
+/* Code blocks */
+.reveal pre {
+    background: var(--background-dark);
+    border: 1px solid var(--box-border);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.reveal code {
+    font-family: "Courier New", monospace;
+    font-size: 12pt;
+    color: var(--secondary-color);
+}
+
+/* Lists */
+.reveal ul {
+    display: block;
+}
+
+.reveal ul li {
+    margin-bottom: 5px;
+}
+
+/* Strong emphasis */
+.reveal strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Ensure all boxes constrain their content */
+.box *, .box-outlined *, .box-primary *, .box-secondary *, .box-accent *,
+.callout *, .fun-item *, .bartle-item *, .tetrad-item *, .takeaway-item * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* =============================================================================
+   ANIMATIONS - Fragment styles
+   ============================================================================= */
+.reveal .slides section .fragment {
+    transition: all 0.3s ease;
+}
+
+.reveal .slides section .fragment.visible {
+    opacity: 1;
+}
+
+.reveal .slides section .fragment.fade-out {
+    opacity: 0;
+}
+
+/* Fade in animation for content */
+.reveal .slides section .fragment.fade-in {
+    opacity: 0;
+}
+
+.reveal .slides section .fragment.fade-in.visible {
+    opacity: 1;
+}
+
+/* Slide in from left */
+.reveal .slides section .fragment.slide-in-left {
+    transform: translateX(-50px);
+    opacity: 0;
+}
+
+.reveal .slides section .fragment.slide-in-left.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Slide in from right */
+.reveal .slides section .fragment.slide-in-right {
+    transform: translateX(50px);
+    opacity: 0;
+}
+
+.reveal .slides section .fragment.slide-in-right.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Scale up animation */
+.reveal .slides section .fragment.scale-up {
+    transform: scale(0.8);
+    opacity: 0;
+}
+
+.reveal .slides section .fragment.scale-up.visible {
+    transform: scale(1);
+    opacity: 1;
+}

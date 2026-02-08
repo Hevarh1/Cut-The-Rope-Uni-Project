@@ -1,5 +1,5 @@
-# Payload Drop Game Package
-"""A physics-based puzzle game inspired by Cut the Rope."""
+# Cut The Rope Game Package
+"""A physics-based rope-cutting puzzle game."""
 
 __version__ = "1.0.0"
 __author__ = "Game Developer"

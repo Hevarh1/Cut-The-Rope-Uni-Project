@@ -1,8 +1,8 @@
-Game Design Document: Payload Drop
+Game Design Document: Cut The Rope
 
 1. Overview
 
-Title: Payload Drop Genre: Physics Puzzle Core Mechanic: The player cannot control the object directly. They interact by removing constraints (cutting ropes) to let gravity and momentum guide the object to the goal. Tech Stack: Python, pygame-ce, and pymunk (essential for physics). 2. Technical Architecture
+Title: Cut The Rope Genre: Physics Puzzle Core Mechanic: The player cannot control the object directly. They interact by removing constraints (cutting ropes) to let gravity and momentum guide the object to the goal. Tech Stack: Python, pygame-ce, and pymunk (essential for physics). 2. Technical Architecture
 
     Physics Engine: pymunk. This library handles gravity, collisions, and—most importantly—PinJoints (which act as ropes).
 
@@ -13,19 +13,19 @@ Title: Payload Drop Genre: Physics Puzzle Core Mechanic: The player cannot contr
 3.  Game Rules & Mechanics
     A. The Goal
 
-        Primary Goal: Guide the Payload (a crate or ball) into the Delivery Box (Target Zone).
+        Primary Goal: Guide the Candy (a ball) into the Delivery Box (Target Zone).
 
-        Win Condition: The Payload stays inside the Delivery Box for 2 seconds (settles).
+        Win Condition: The Candy stays inside the Delivery Box for 2 seconds (settles).
 
-        Fail Condition: The Payload falls off the screen or touches a "Spike" hazard.
+        Fail Condition: The Candy falls off the screen or touches a "Spike" hazard.
 
 B. The Ropes (Constraints)
 
-    The Payload hangs from one or more Anchors via ropes.
+    The Candy hangs from one or more Anchors via ropes.
 
-    Physics: These are pymunk.PinJoints. They have a fixed length but allow the payload to swing freely like a pendulum.
+    Physics: These are pymunk.PinJoints. They have a fixed length but allow the candy to swing freely like a pendulum.
 
-    Visual: Drawn as a simple line from the Anchor to the Payload.
+    Visual: Drawn as a simple line from the Anchor to the Candy.
 
 C. The Interaction (The Knife)
 
@@ -37,27 +37,27 @@ C. The Interaction (The Knife)
 
 D. Game Objects
 
-    Payload: Dynamic Body (has mass and inertia). Bounces slightly.
+    Candy: Dynamic Body (has mass and inertia). Bounces slightly.
 
     Anchor: Static Body (fixed in space). The rope ties to this.
 
-    Obstacles: Static platforms (wood/metal) that the payload can bounce off.
+    Obstacles: Static platforms (wood/metal) that the candy can bounce off.
 
-    Blower (Auxiliary): An air cushion that pushes the payload if clicked (adds a force vector).
+    Blower (Auxiliary): An air cushion that pushes the candy if clicked (adds a force vector).
 
 4.  Level Progression (Example)
 
     Level 1: Single rope directly above the box. Cut rope -> Falls straight down.
 
-    Level 2: Two ropes holding the payload. Cut left rope -> Payload swings right -> Cut right rope at the apex of the swing -> Payload arcs into the box.
+    Level 2: Two ropes holding the candy. Cut left rope -> Candy swings right -> Cut right rope at the apex of the swing -> Candy arcs into the box.
 
-    Level 3: Obstacles block the direct path. Player must swing the payload to hit a wall, bounce off, and then cut.
+    Level 3: Obstacles block the direct path. Player must swing the candy to hit a wall, bounce off, and then cut.
 
 5.  Visual Style
 
     Ropes: Brown or Black lines.
 
-    Payload: Red Box.
+    Candy: Red ball.
 
     Target: Green open-top box.
 
@@ -72,7 +72,7 @@ D. Game Objects
 
 Step 2: The Rope Logic
 
-    The Agent needs to store Ropes in a list: ropes = [{'joint': joint_obj, 'start': anchor_body, 'end': payload_body}, ...].
+    The Agent needs to store Ropes in a list: ropes = [{'joint': joint_obj, 'start': anchor_body, 'end': candy_body}, ...].
 
     This is crucial because you need the coordinates of the start and end points to detect if the mouse crossed the line.
 
@@ -88,4 +88,4 @@ Step 4: Win Detection
 
     Create a Sensor (Collision Handler) in the box.
 
-    If Payload touches Sensor: Start a timer. If timer > 2s, Level Complete.
+    If Candy touches Sensor: Start a timer. If timer > 2s, Level Complete.

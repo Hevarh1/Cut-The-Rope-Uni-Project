@@ -1,11 +1,11 @@
 """
-Payload Drop - Level Editor
+Cut The Rope - Level Editor
 
 Click to place objects, level data automatically saves to a file.
 
 Controls:
-- 1: Place Payload (red circle)
-- 2: Place Anchor (grey circle) 
+- 1: Place Candy (red circle)
+- 2: Place Anchor (grey circle)
 - 3: Place Target Box (green box)
 - 4: Place Platform (grey rectangle)
 - 5: Place Spike (red rectangle)
@@ -54,18 +54,18 @@ class EditorObject:
 class LevelEditor:
     def __init__(self):
         pygame.init()
-        pygame.display.set_caption("Payload Drop - Level Editor")
+        pygame.display.set_caption("Cut The Rope - Level Editor")
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Avenir", 18)
         self.big_font = pygame.font.SysFont("Avenir", 24)
         
         self.objects: List[EditorObject] = []
-        self.mode = "payload"  # Current placement mode
+        self.mode = "candy"  # Current placement mode
         self.rect_start: Optional[Tuple[int, int]] = None
         
         # Default sizes
-        self.payload_radius = 20
+        self.candy_radius = 20
         self.anchor_radius = 8
         self.target_default_size = (120, 80)
         
@@ -87,7 +87,7 @@ class LevelEditor:
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_1:
-                    self.mode = "payload"
+                    self.mode = "candy"
                     self.rect_start = None
                 elif event.key == pygame.K_2:
                     self.mode = "anchor"
@@ -117,10 +117,10 @@ class LevelEditor:
         mx, my = pos
         pymunk_y = pygame_to_pymunk_y(my)
         
-        if self.mode == "payload":
-            # Remove existing payload
-            self.objects = [obj for obj in self.objects if obj.type != "payload"]
-            self.objects.append(EditorObject("payload", {
+        if self.mode == "candy":
+            # Remove existing candy
+            self.objects = [obj for obj in self.objects if obj.type != "candy"]
+            self.objects.append(EditorObject("candy", {
                 'x': mx,
                 'y': pymunk_y
             }))
@@ -186,7 +186,7 @@ class LevelEditor:
         to_remove = []
         
         for obj in self.objects:
-            if obj.type in ["payload", "anchor"]:
+            if obj.type in ["candy", "anchor"]:
                 obj_screen_y = PYMUNK_HEIGHT - obj.data['y']
                 dist = ((mx - obj.data['x'])**2 + (my - obj_screen_y)**2)**0.5
                 if dist < 20:
@@ -219,15 +219,15 @@ class LevelEditor:
     
     def save_level(self):
         """Save level automatically with console prompt."""
-        payload = None
+        candy = None
         anchors = []
         target = None
         platforms = []
         spikes = []
         
         for obj in self.objects:
-            if obj.type == "payload":
-                payload = (int(obj.data['x']), int(obj.data['y']))
+            if obj.type == "candy":
+                candy = (int(obj.data['x']), int(obj.data['y']))
             elif obj.type == "anchor":
                 anchors.append((int(obj.data['x']), int(obj.data['y'])))
             elif obj.type == "target":
@@ -272,7 +272,7 @@ class LevelEditor:
 LevelData(
     name="{level_name}",
     difficulty={difficulty},
-    payload_pos={payload if payload else (640, 520)},
+    candy_pos={candy if candy else (640, 520)},
     anchors={anchors if anchors else [(640, 670)]},
     target_pos={target['pos'] if target else (640, 120)},
     target_size={target['size'] if target else (120, 80)},
@@ -319,14 +319,14 @@ LevelData(
         
         # Draw objects
         for obj in self.objects:
-            if obj.type == "payload":
+            if obj.type == "candy":
                 screen_y = PYMUNK_HEIGHT - obj.data['y']
-                pygame.draw.circle(self.screen, COLOR_PAYLOAD, 
-                                 (int(obj.data['x']), int(screen_y)), 
-                                 self.payload_radius)
+                pygame.draw.circle(self.screen, COLOR_PAYLOAD,
+                                 (int(obj.data['x']), int(screen_y)),
+                                 self.candy_radius)
                 pygame.draw.circle(self.screen, (180, 50, 50),
                                  (int(obj.data['x']), int(screen_y)),
-                                 self.payload_radius, 2)
+                                 self.candy_radius, 2)
             
             elif obj.type == "anchor":
                 screen_y = PYMUNK_HEIGHT - obj.data['y']
@@ -416,7 +416,7 @@ LevelData(
         
         # Object count
         counts = {
-            'payload': 0,
+            'candy': 0,
             'anchor': 0,
             'target': 0,
             'platform': 0,

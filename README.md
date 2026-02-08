@@ -1,6 +1,6 @@
-# Payload Drop
+# Cut The Rope
 
-A physics-based puzzle game where you cut ropes to guide a payload into a target box. Built with `pygame-ce` and `pymunk`.
+A physics-based puzzle game where you cut ropes to guide a candy ball into a target box. Built with `pygame-ce` and `pymunk`.
 
 ## Requirements
 
@@ -19,12 +19,12 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-python payload_drop.py
+python run.py
 ```
 
 ## How to Play
 
-**Objective:** Cut the ropes holding the payload to swing and drop it into the green target box. The payload must settle (stay inside for 2 seconds) to win.
+**Objective:** Cut the ropes holding the candy to swing and drop it into the green target box. The candy must settle (stay inside for 2 seconds) to win.
 
 ### Controls
 
@@ -40,12 +40,12 @@ python payload_drop.py
 2. **Plan** which rope to cut first to create the right swing
 3. **Time** your cuts to use momentum and gravity
 4. **Avoid** spikes (red hazards)
-5. **Use** platforms to bounce and redirect the payload
+5. **Use** platforms to bounce and redirect the candy
 
 ### Levels
 
 - **Level 1**: Simple drop - cut the single rope
-- **Level 2**: Dual ropes - swing the payload toward the target using momentum
+- **Level 2**: Dual ropes - swing the candy toward the target using momentum
 - **Level 3**: Complex path - navigate around obstacles and spikes
 
 ## Game Mechanics
@@ -53,7 +53,7 @@ python payload_drop.py
 - **Pymunk Physics**: Realistic gravity, collisions, and rope constraints
 - **PinJoint Ropes**: Act as fixed-length pendulums allowing natural swinging
 - **Line Intersection**: Precise rope cutting using segment intersection detection
-- **Collision Sensors**: Target box detects when payload enters and tracks settle time
+- **Collision Sensors**: Target box detects when candy enters and tracks settle time
 
 ## Architecture Notes
 
@@ -72,7 +72,7 @@ python level_editor.py
 
 ### Level Editor Controls:
 
-- **1** - Place Payload (red circle)
+- **1** - Place Candy (red circle)
 - **2** - Place Anchor (grey circle)
 - **3** - Place Target Box (green box)
 - **4** - Place Platform (grey rectangle)
@@ -85,19 +85,19 @@ python level_editor.py
 
 ### Workflow:
 
-1. Press `1` and click to place the payload (where it starts)
+1. Press `1` and click to place the candy (where it starts)
 2. Press `2` and click to place anchors (where ropes attach)
 3. Press `3` and click twice to draw the target box (top-left, then bottom-right)
 4. Press `4` and click twice to draw platforms
 5. Press `5` and click twice to draw spike hazards
 6. Press `S` to print the level code to the console
 7. Copy the generated `LevelData` code
-8. Paste it into `payload_drop.py` in the `create_levels()` method
+8. Paste it into `src/levels.py` in the `_create_levels()` method
 9. Add it to the return statement: `return [level_1, level_2, your_new_level]`
 
 ### Tips:
 
-- Payload should be at a medium Y value (400-550)
+- Candy should be at a medium Y value (400-550)
 - Anchors should be HIGHER Y values (600-700) - remember Y increases upward in pymunk!
 - Target should be at LOW Y values (80-150) near the bottom
 - Use platforms to create bounce paths

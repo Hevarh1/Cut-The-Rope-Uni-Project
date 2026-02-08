@@ -9,7 +9,7 @@ from typing import List, Tuple
 @dataclass
 class LevelData:
     """Data structure for a single level."""
-    payload_pos: Tuple[float, float]
+    candy_pos: Tuple[float, float]
     anchors: List[Tuple[float, float]]
     target_pos: Tuple[float, float]
     target_size: Tuple[float, float]
@@ -57,7 +57,7 @@ class LevelManager:
             LevelData(
                 name="First Drop",
                 difficulty=1,
-                payload_pos=(640, 520),
+                candy_pos=(640, 520),
                 anchors=[(640, 670)],
                 target_pos=(640, 120),
                 target_size=(120, 80),
@@ -69,7 +69,7 @@ class LevelManager:
             LevelData(
                 name="Double Trouble",
                 difficulty=1,
-                payload_pos=(400, 470),
+                candy_pos=(400, 470),
                 anchors=[(300, 670), (500, 670)],
                 target_pos=(800, 120),
                 target_size=(140, 80),
@@ -81,7 +81,7 @@ class LevelManager:
             LevelData(
                 name="Obstacle Course",
                 difficulty=2,
-                payload_pos=(300, 520),
+                candy_pos=(300, 520),
                 anchors=[(200, 670), (400, 640)],
                 target_pos=(950, 120),
                 target_size=(150, 80),
@@ -96,7 +96,7 @@ class LevelManager:
             LevelData(
                 name="Platform Puzzle",
                 difficulty=2,
-                payload_pos=(162, 522),
+                candy_pos=(162, 522),
                 anchors=[(242, 525), (337, 518)],
                 target_pos=(544, 223),
                 target_size=(137, 51),
@@ -108,7 +108,7 @@ class LevelManager:
             LevelData(
                 name="Triple Threat",
                 difficulty=3,
-                payload_pos=(190, 425),
+                candy_pos=(190, 425),
                 anchors=[(326, 514), (333, 314), (623, 616)],
                 target_pos=(919, 158),
                 target_size=(161, 72),
@@ -120,7 +120,7 @@ class LevelManager:
             LevelData(
                 name="The Gauntlet",
                 difficulty=4,
-                payload_pos=(236, 489),
+                candy_pos=(236, 489),
                 anchors=[(134, 537), (353, 623), (533, 605)],
                 target_pos=(1154, 113),
                 target_size=(180, 63),

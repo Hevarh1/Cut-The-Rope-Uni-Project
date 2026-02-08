@@ -1,5 +1,5 @@
 """
-Configuration and constants for Payload Drop game.
+Configuration and constants for Cut The Rope game.
 All game settings, colors, and physics constants are defined here.
 """
 
@@ -10,7 +10,7 @@ WIDTH = 1280
 HEIGHT = 720
 FPS = 60
 PYMUNK_HEIGHT = 720
-GAME_TITLE = "Payload Drop"
+GAME_TITLE = "Cut The Rope"
 
 # =============================================================================
 # PHYSICS SETTINGS
@@ -57,11 +57,16 @@ COLOR_BG = (25, 28, 40)
 COLOR_BG_GRADIENT_TOP = (35, 40, 58)
 COLOR_BG_GRADIENT_BOTTOM = (20, 23, 35)
 
-# Payload (candy/ball)
-COLOR_PAYLOAD = (255, 107, 107)
-COLOR_PAYLOAD_HIGHLIGHT = (255, 160, 160)
-COLOR_PAYLOAD_SHADOW = (180, 60, 60)
-COLOR_PAYLOAD_STRIPE = (255, 80, 80)
+# Candy (ball)
+CANDY_MASS = 15
+CANDY_RADIUS = 20
+CANDY_FRICTION = 0.7
+CANDY_ELASTICITY = 0.4
+
+COLOR_CANDY = (255, 107, 107)
+COLOR_CANDY_HIGHLIGHT = (255, 160, 160)
+COLOR_CANDY_SHADOW = (180, 60, 60)
+COLOR_CANDY_STRIPE = (255, 80, 80)
 
 # Anchor points
 COLOR_ANCHOR = (120, 130, 150)
