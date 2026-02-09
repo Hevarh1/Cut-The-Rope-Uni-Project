@@ -71,7 +71,7 @@ class LevelManager:
                 difficulty=1,
                 candy_pos=(400, 470),
                 anchors=[(300, 670), (500, 670)],
-                target_pos=(800, 120),
+                target_pos=(900, 120),
                 target_size=(140, 80),
                 platforms=[(650, 270, 200, 20)],
                 spikes=[]

@@ -1,19 +1,20 @@
 /* =============================================================================
    CUT THE ROPE PRESENTATION STYLES
-   Dark space theme inspired by the game's aesthetic
+   Modern gradient theme with vibrant colors
    ============================================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Open+Sans:wght@300;400;600&display=swap');
 
 /* =============================================================================
-   CSS VARIABLES - Game-inspired color palette
+   CSS VARIABLES - Modern vibrant color palette
    ============================================================================= */
 :root {
-    /* Background - Deep space theme from game */
-    --background-color: #191c28;
-    --background-dark: #0f1219;
-    --background-gradient-start: #232840;
-    --background-gradient-end: #191c28;
+    /* Background - Modern gradient theme */
+    --background-color: #1a1a2e;
+    --background-dark: #0f0f1a;
+    --background-gradient-start: #16213e;
+    --background-gradient-end: #1a1a2e;
+    --background-accent: #0f3460;
 
     /* Typography - Professional sans-serif */
     --heading-font: "Montserrat", "Arial Black", sans-serif;
@@ -26,14 +27,20 @@
     --h3-size: 20pt;
     --h4-size: 16pt;
 
-    /* Game-inspired colors */
-    --primary-color: #ff6b6b;
-    --secondary-color: #50dc8c;
-    --accent-color: #a07850;
-    --text-color: #f0f5ff;
-    --muted-color: #8892b0;
-    --box-bg: #252a3d;
-    --box-border: #3a4158;
+    /* Modern vibrant color palette */
+    --primary-color: #e94560;
+    --secondary-color: #00d9ff;
+    --accent-color: #ffaa00;
+    --text-color: #ffffff;
+    --muted-color: #a0a0a0;
+    --box-bg: rgba(22, 33, 62, 0.8);
+    --box-border: rgba(0, 217, 255, 0.3);
+
+    /* Additional colors for variety */
+    --success-color: #00ff88;
+    --warning-color: #ffaa00;
+    --info-color: #00d9ff;
+    --danger-color: #e94560;
 }
 
 /* =============================================================================
@@ -44,6 +51,11 @@
     font-size: var(--text-size);
     color: var(--text-color);
     background: var(--background-color);
+    overflow-x: hidden;
+}
+
+.reveal .slides {
+    overflow-x: hidden;
 }
 
 .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
@@ -88,6 +100,9 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    overflow: hidden;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .reveal .slides section .content {
@@ -96,6 +111,10 @@
     justify-content: flex-start;
     gap: 16px;
     flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    max-width: 100%;
 }
 
 .reveal .slides {
@@ -144,14 +163,12 @@
     color: var(--primary-color);
     font-size: 64pt;
     margin: 0 0 12px 0;
-    text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
 }
 
 #title .subtitle {
     color: var(--secondary-color);
     font-size: 28pt;
     font-weight: 300;
-    margin: 0;
 }
 
 /* Container for the two boxes */
@@ -186,13 +203,13 @@
 }
 
 .team-box {
-    border-color: rgba(255, 107, 107, 0.3);
-    background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(37, 42, 61, 0.9) 100%);
+    border-color: rgba(233, 69, 96, 0.5);
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.15) 0%, rgba(22, 33, 62, 0.9) 100%);
 }
 
 .supervisor-box {
-    border-color: rgba(80, 220, 140, 0.3);
-    background: linear-gradient(135deg, rgba(80, 220, 140, 0.08) 0%, rgba(37, 42, 61, 0.9) 100%);
+    border-color: rgba(0, 217, 255, 0.5);
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(22, 33, 62, 0.9) 100%);
 }
 
 /* Icon styling */
@@ -246,21 +263,21 @@
 }
 
 .name-1 {
-    background: linear-gradient(135deg, rgba(255, 107, 107, 0.25) 0%, rgba(255, 107, 107, 0.15) 100%);
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.3) 0%, rgba(233, 69, 96, 0.15) 100%);
     color: #ffb4b4;
-    border: 1px solid rgba(255, 107, 107, 0.3);
+    border: 1px solid rgba(233, 69, 96, 0.4);
 }
 
 .name-2 {
-    background: linear-gradient(135deg, rgba(80, 220, 140, 0.25) 0%, rgba(80, 220, 140, 0.15) 100%);
-    color: #a0ffc8;
-    border: 1px solid rgba(80, 220, 140, 0.3);
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.3) 0%, rgba(0, 217, 255, 0.15) 100%);
+    color: #a0fcff;
+    border: 1px solid rgba(0, 217, 255, 0.4);
 }
 
 .name-3 {
-    background: linear-gradient(135deg, rgba(160, 120, 80, 0.25) 0%, rgba(160, 120, 80, 0.15) 100%);
-    color: #e0c8a8;
-    border: 1px solid rgba(160, 120, 80, 0.3);
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.3) 0%, rgba(255, 170, 0, 0.15) 100%);
+    color: #ffe0a0;
+    border: 1px solid rgba(255, 170, 0, 0.4);
 }
 
 .name-divider {
@@ -303,13 +320,11 @@
     height: 12px;
     border-radius: 50%;
     background: var(--primary-color);
-    box-shadow: 0 0 20px var(--primary-color);
     animation: pulse 2s ease-in-out infinite;
 }
 
 .title-decorative .dot:last-child {
     background: var(--secondary-color);
-    box-shadow: 0 0 20px var(--secondary-color);
     animation-delay: 1s;
 }
 
@@ -324,6 +339,7 @@
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.2);
         opacity: 0.8;
@@ -347,7 +363,6 @@
 .section-divider h2 {
     color: var(--secondary-color);
     font-size: 64pt;
-    text-shadow: 0 0 40px rgba(80, 220, 140, 0.4);
     margin: 0;
 }
 
@@ -366,6 +381,7 @@
     border-radius: 10px;
     padding: 16px;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .box-outlined {
@@ -374,30 +390,34 @@
     border-radius: 10px;
     padding: 16px;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .box-primary {
-    background: linear-gradient(135deg, rgba(255, 107, 107, 0.12), rgba(255, 107, 107, 0.04));
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.12), rgba(233, 69, 96, 0.04));
     border: 2px solid var(--primary-color);
     border-radius: 10px;
     padding: 16px;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .box-secondary {
-    background: linear-gradient(135deg, rgba(80, 220, 140, 0.12), rgba(80, 220, 140, 0.04));
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.12), rgba(0, 217, 255, 0.04));
     border: 2px solid var(--secondary-color);
     border-radius: 10px;
     padding: 16px;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .box-accent {
-    background: linear-gradient(135deg, rgba(160, 120, 80, 0.12), rgba(160, 120, 80, 0.04));
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.12), rgba(255, 170, 0, 0.04));
     border: 2px solid var(--accent-color);
     border-radius: 10px;
     padding: 16px;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .box p, .box li {
@@ -418,8 +438,10 @@
     border-left: 4px solid var(--primary-color);
     padding: 12px 16px;
     margin: 10px 0;
-    background: rgba(255, 107, 107, 0.1);
+    background: rgba(233, 69, 96, 0.1);
     border-radius: 0 10px 10px 0;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .callout i {
@@ -432,23 +454,23 @@
 }
 
 .callout-blue {
-    border-left-color: #5ea8a7;
-    background: rgba(94, 168, 167, 0.1);
+    border-left-color: var(--info-color);
+    background: rgba(0, 217, 255, 0.15);
 }
 
 .callout-orange {
-    border-left-color: #ff9800;
-    background: rgba(255, 152, 0, 0.1);
+    border-left-color: var(--warning-color);
+    background: rgba(255, 170, 0, 0.15);
 }
 
 .callout-green {
-    border-left-color: var(--secondary-color);
-    background: rgba(80, 220, 140, 0.1);
+    border-left-color: var(--success-color);
+    background: rgba(0, 255, 136, 0.15);
 }
 
 .callout-gray {
     border-left-color: var(--muted-color);
-    background: rgba(136, 146, 176, 0.1);
+    background: rgba(160, 160, 160, 0.1);
 }
 
 /* =============================================================================
@@ -458,17 +480,23 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 22px;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .three-columns {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .column {
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 /* =============================================================================
@@ -478,7 +506,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .mechanics-item {
@@ -486,7 +514,12 @@
     border: 2px solid var(--box-border);
     border-radius: 10px;
     padding: 18px 16px;
+    min-height: 140px;
     height: auto;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .mechanics-item h4 {
@@ -567,6 +600,35 @@
 
 .fun-concept p {
     font-size: 13pt;
+}
+
+/* Compact layout for fun concepts */
+.fun-concepts-compact {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.fun-concepts-compact .fun-concept {
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.fun-concepts-compact .fun-concept h4 {
+    color: var(--primary-color);
+    font-size: 14pt;
+    margin-bottom: 6px;
+}
+
+.fun-concepts-compact .fun-concept h4 i {
+    margin-right: 6px;
+}
+
+.fun-concepts-compact .fun-concept p {
+    font-size: 12pt;
+    line-height: 1.4;
 }
 
 /* =============================================================================
@@ -659,6 +721,8 @@
     padding: 18px;
     text-align: center;
     position: relative;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .fun-item i {
@@ -682,22 +746,22 @@
 }
 
 .fun-high {
-    border-color: var(--secondary-color);
-    background: rgba(80, 220, 140, 0.1);
+    border-color: var(--success-color);
+    background: rgba(0, 255, 136, 0.15);
 }
 
 .fun-high .fun-label {
-    background: var(--secondary-color);
+    background: var(--success-color);
     color: var(--background-dark);
 }
 
 .fun-high i, .fun-high strong {
-    color: var(--secondary-color);
+    color: var(--success-color);
 }
 
 .fun-medium {
     border-color: var(--accent-color);
-    background: rgba(160, 120, 80, 0.1);
+    background: rgba(255, 170, 0, 0.15);
 }
 
 .fun-medium .fun-label {
@@ -711,7 +775,7 @@
 
 .fun-low {
     border-color: var(--muted-color);
-    background: rgba(136, 146, 176, 0.1);
+    background: rgba(160, 160, 160, 0.1);
 }
 
 .fun-low .fun-label {
@@ -738,6 +802,8 @@
     border-radius: 10px;
     padding: 20px;
     position: relative;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .bartle-item i {
@@ -765,22 +831,22 @@
 }
 
 .bartle-high {
-    border-color: var(--secondary-color);
-    background: rgba(80, 220, 140, 0.1);
+    border-color: var(--success-color);
+    background: rgba(0, 255, 136, 0.15);
 }
 
 .bartle-high .bartle-label {
-    background: var(--secondary-color);
+    background: var(--success-color);
     color: var(--background-dark);
 }
 
 .bartle-high i, .bartle-high h4 {
-    color: var(--secondary-color);
+    color: var(--success-color);
 }
 
 .bartle-medium {
     border-color: var(--accent-color);
-    background: rgba(160, 120, 80, 0.1);
+    background: rgba(255, 170, 0, 0.15);
 }
 
 .bartle-medium .bartle-label {
@@ -794,7 +860,7 @@
 
 .bartle-low {
     border-color: var(--muted-color);
-    background: rgba(136, 146, 176, 0.05);
+    background: rgba(160, 160, 160, 0.05);
 }
 
 .bartle-low .bartle-label {
@@ -838,7 +904,7 @@
 
 .diff-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    background: linear-gradient(90deg, var(--success-color), var(--info-color));
     border-radius: 8px;
     transition: width 0.5s ease;
 }
@@ -878,6 +944,8 @@
     border: 1px solid var(--box-border);
     border-radius: 8px;
     padding: 10px;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .diff-label {
@@ -911,6 +979,8 @@
     border: 2px solid var(--box-border);
     border-radius: 10px;
     padding: 18px;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .tetrad-item h4 {
@@ -933,35 +1003,35 @@
 }
 
 .tetrad-mechanics {
-    border-color: #5ea8a7;
+    border-color: var(--info-color);
 }
 
 .tetrad-mechanics h4, .tetrad-mechanics i {
-    color: #5ea8a7;
+    color: var(--info-color);
 }
 
 .tetrad-story {
-    border-color: #ff9800;
+    border-color: var(--warning-color);
 }
 
 .tetrad-story h4, .tetrad-story i {
-    color: #ff9800;
+    color: var(--warning-color);
 }
 
 .tetrad-aesthetics {
-    border-color: var(--secondary-color);
+    border-color: var(--success-color);
 }
 
 .tetrad-aesthetics h4, .tetrad-aesthetics i {
-    color: var(--secondary-color);
+    color: var(--success-color);
 }
 
 .tetrad-technology {
-    border-color: var(--accent-color);
+    border-color: var(--primary-color);
 }
 
 .tetrad-technology h4, .tetrad-technology i {
-    color: var(--accent-color);
+    color: var(--primary-color);
 }
 
 /* =============================================================================
@@ -985,7 +1055,7 @@
 
 .takeaway-item i {
     font-size: 18pt;
-    color: var(--secondary-color);
+    color: var(--success-color);
     flex-shrink: 0;
 }
 
@@ -1054,6 +1124,10 @@
     transition: all 0.3s ease;
 }
 
+.tag:hover {
+    transform: translateY(-2px);
+}
+
 /* Thank You animations */
 .reveal .slides section #end .thank-you-circle.visible {
     animation: pulse 2s ease-in-out infinite;
@@ -1115,16 +1189,25 @@
 /* =============================================================================
    REVEAL.JS OVERRIDES
    ============================================================================= */
-.reveal .progress {
-    color: var(--primary-color);
-}
-
+.reveal .progress,
 .reveal .controls {
-    color: var(--secondary-color);
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
+/* Slide number styling */
 .reveal .slide-number {
-    color: var(--muted-color);
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 16px;
+    color: var(--secondary-color);
+    background: rgba(15, 15, 26, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: var(--heading-font);
+    font-weight: 600;
 }
 
 /* Links */
@@ -1174,10 +1257,14 @@
 /* Lists */
 .reveal ul {
     display: block;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .reveal ul li {
     margin-bottom: 5px;
+    max-width: 100%;
+    overflow-wrap: break-word;
 }
 
 /* Strong emphasis */
@@ -1194,10 +1281,129 @@
 }
 
 /* =============================================================================
-   ANIMATIONS - Fragment styles
+   MORPH TRANSITIONS - Fluid, shape-shifting slide transitions
    ============================================================================= */
+
+/* Past and future slides - completely hidden during transitions */
+.reveal .slides section.past,
+.reveal .slides section.future {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Section dividers - completely hide when not active */
+.section-divider.past,
+.section-divider.future {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Current slide - fully visible */
+.reveal .slides section.present {
+    opacity: 1 !important;
+}
+
+/* Morph effect for boxes - simplified, no animation */
+.reveal .slides section.present .box,
+.reveal .slides section.present .box-outlined,
+.reveal .slides section.present .box-primary,
+.reveal .slides section.present .box-secondary,
+.reveal .slides section.present .box-accent,
+.reveal .slides section.present .callout,
+.reveal .slides section.present .fun-item,
+.reveal .slides section.present .bartle-item,
+.reveal .slides section.present .tetrad-item,
+.reveal .slides section.present .takeaway-item {
+    opacity: 1;
+}
+
+/* Morph effect for columns - simplified, no animation */
+.reveal .slides section.present .column {
+    opacity: 1;
+}
+
+/* Grid items - simplified, no animation */
+.reveal .slides section.present .mechanics-grid .mechanics-item,
+.reveal .slides section.present .fun-grid .fun-item,
+.reveal .slides section.present .bartle-grid .bartle-item,
+.reveal .slides section.present .tetrad-grid .tetrad-item,
+.reveal .slides section.present .difficulty-grid .diff-item {
+    opacity: 1;
+}
+
+/* Heading morph effect - simplified, no animation */
+.reveal .slides section.present h2,
+.reveal .slides section.present h3 {
+    opacity: 1;
+}
+
+/* Title slide elements - simplified, no animation */
+#title.present .title-header {
+    opacity: 1;
+}
+
+#title.present .team-container {
+    opacity: 1;
+}
+
+/* Decorative dots - simplified, no animation */
+.title-decorative .dot {
+    opacity: 1;
+}
+
+/* Motivation items - simplified, no animation */
+.motivation-item {
+    opacity: 1;
+}
+
+/* Callout - simplified, no animation */
+.reveal .slides section.present .callout {
+    opacity: 1;
+}
+
+/* Puzzle box - simplified, no animation */
+.puzzle-box {
+    opacity: 1;
+}
+
+/* Fun concept - simplified, no animation */
+.fun-concept {
+    opacity: 1;
+}
+
+/* Takeaway item - simplified, no animation */
+.takeaway-item {
+    opacity: 1;
+}
+
+/* Thank you circle - simplified, no animation */
+#end.present .thank-you-circle {
+    opacity: 1;
+}
+
+/* Section divider h2 - simplified, no animation */
+.section-divider.present h2 {
+    opacity: 1;
+}
+
+/* Fragment transitions - simplified */
+.reveal .fragment.visible {
+    opacity: 1;
+}
+
+/* Icon morph effects - simplified, no animation */
+.reveal .slides section.present i {
+    opacity: 1;
+}
+
+/* =============================================================================
+   ANIMATIONS - Fragment styles (simplified)
+   ============================================================================= */
+/* Base fragment styles - simplified */
 .reveal .slides section .fragment {
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .reveal .slides section .fragment.visible {
@@ -1206,46 +1412,4 @@
 
 .reveal .slides section .fragment.fade-out {
     opacity: 0;
-}
-
-/* Fade in animation for content */
-.reveal .slides section .fragment.fade-in {
-    opacity: 0;
-}
-
-.reveal .slides section .fragment.fade-in.visible {
-    opacity: 1;
-}
-
-/* Slide in from left */
-.reveal .slides section .fragment.slide-in-left {
-    transform: translateX(-50px);
-    opacity: 0;
-}
-
-.reveal .slides section .fragment.slide-in-left.visible {
-    transform: translateX(0);
-    opacity: 1;
-}
-
-/* Slide in from right */
-.reveal .slides section .fragment.slide-in-right {
-    transform: translateX(50px);
-    opacity: 0;
-}
-
-.reveal .slides section .fragment.slide-in-right.visible {
-    transform: translateX(0);
-    opacity: 1;
-}
-
-/* Scale up animation */
-.reveal .slides section .fragment.scale-up {
-    transform: scale(0.8);
-    opacity: 0;
-}
-
-.reveal .slides section .fragment.scale-up.visible {
-    transform: scale(1);
-    opacity: 1;
 }

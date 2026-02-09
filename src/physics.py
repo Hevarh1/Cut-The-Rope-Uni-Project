@@ -25,16 +25,16 @@ class Rope:
     def get_points(self) -> List[Tuple[int, int]]:
         """Get all rope points for drawing."""
         points = []
-        
+
         if self.anchor_body:
             points.append(pymunk_to_pygame(self.anchor_body.position))
-        
+
         for segment in self.segments:
             points.append(pymunk_to_pygame(segment.position))
-        
-        if self.payload_body:
+
+        if self.candy_body:
             points.append(pymunk_to_pygame(self.candy_body.position))
-        
+
         return points
 
 

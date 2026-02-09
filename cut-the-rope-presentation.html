@@ -14,12 +14,12 @@
 
             <!-- Title Slide -->
             <section id="title">
-                <div class="title-header fragment fade-in">
+                <div class="title-header fade-in">
                     <h1>Cut The Rope</h1>
                     <h2 class="subtitle">A Game Design Analysis</h2>
                 </div>
 
-                <div class="team-container fragment fade-in">
+                <div class="team-container fade-in">
                     <div class="team-box">
                         <div class="team-icon">
                             <i class="fa-solid fa-users"></i>
@@ -43,12 +43,8 @@
                     </div>
                 </div>
 
-                <p class="author fragment fade-in">
-                    <i class="fa-solid fa-graduation-cap"></i>
-                    Based on Game Design Lectures
-                </p>
 
-                <div class="title-decorative fragment fade-in">
+                <div class="title-decorative fade-in">
                     <span class="dot"></span>
                     <span class="line"></span>
                     <span class="dot"></span>
@@ -74,16 +70,32 @@
                                 <p>Press letter keys (A, B, C...) to cut ropes and release the candy</p>
                             </div>
                         </div>
-                        <div class="column fragment fade-in">
+                        <div class="column">
                             <h3>Key Features</h3>
-                            <ul>
-                                <li class="fragment fade-in"><i class="fa-solid fa-scissors"></i> Rope-cutting physics</li>
-                                <li class="fragment fade-in"><i class="fa-solid fa-arrow-down"></i> Gravity simulation</li>
-                                <li class="fragment fade-in"><i class="fa-solid fa-shapes"></i> 6 progressive levels</li>
-                                <li class="fragment fade-in"><i class="fa-solid fa-flag"></i> Target settling mechanic</li>
-                                <li class="fragment fade-in"><i class="fa-solid fa-triangle-exclamation"></i> Spike obstacles</li>
+                            <ul class="fragment fade-in">
+                                <li><i class="fa-solid fa-scissors"></i> Rope-cutting physics</li>
+                                <li><i class="fa-solid fa-arrow-down"></i> Gravity simulation</li>
+                                <li><i class="fa-solid fa-shapes"></i> 6 progressive levels</li>
+                                <li><i class="fa-solid fa-flag"></i> Target settling mechanic</li>
+                                <li><i class="fa-solid fa-triangle-exclamation"></i> Spike obstacles</li>
                             </ul>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Level Design Sketch -->
+            <section id="level-sketch">
+                <h2><i class="fa-solid fa-pen-ruler"></i> Level Design Sketch</h2>
+                <div class="content">
+                    <div class="callout callout-blue fragment slide-in-left">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <strong>Initial Level Design Concept</strong>
+                        <p>Our initial sketch visualizing the game mechanics and level layout</p>
+                    </div>
+                    <br>
+                    <div class="image-container fragment fade-in">
+                        <img src="level_sketch.png" alt="Level Design Sketch" style="max-width: 80%; max-height: 500px; border-radius: 10px; border: 2px solid var(--secondary-color);">
                     </div>
                 </div>
             </section>
@@ -146,11 +158,11 @@
                     <div class="puzzle-sections">
                         <div class="puzzle-box fragment fade-in">
                             <h3><i class="fa-solid fa-puzzle-piece"></i> Puzzle Qualities</h3>
-                            <ul class="text-xl">
-                                <li class="fragment fade-in">Each level has one optimal solution</li>
-                                <li class="fragment fade-in">Solvable through reasoning</li>
-                                <li class="fragment fade-in">Clear win/lose states</li>
-                                <li class="fragment fade-in">No ambiguity in rules</li>
+                            <ul class="text-xl fragment fade-in">
+                                <li>Each level has one optimal solution</li>
+                                <li>Solvable through reasoning</li>
+                                <li>Clear win/lose states</li>
+                                <li>No ambiguity in rules</li>
                             </ul>
                             <br>
                             <div class="callout callout-orange fragment slide-in-left">
@@ -159,11 +171,11 @@
                         </div>
                         <div class="puzzle-box fragment fade-in">
                             <h3><i class="fa-solid fa-graduation-cap"></i> Learning Curve</h3>
-                            <ul class="text-xl">
-                                <li class="fragment fade-in"><strong>Level 1:</strong> Single rope, simple drop</li>
-                                <li class="fragment fade-in"><strong>Level 2:</strong> Two ropes, swing mechanic</li>
-                                <li class="fragment fade-in"><strong>Level 3:</strong> Obstacles introduced</li>
-                                <li class="fragment fade-in"><strong>Levels 4-6:</strong> Complex multi-rope challenges</li>
+                            <ul class="text-xl fragment fade-in">
+                                <li><strong>Level 1:</strong> Single rope, simple drop</li>
+                                <li><strong>Level 2:</strong> Two ropes, swing mechanic</li>
+                                <li><strong>Level 3:</strong> Obstacles introduced</li>
+                                <li><strong>Levels 4-6:</strong> Complex multi-rope challenges</li>
                             </ul>
                         </div>
                     </div>
@@ -355,22 +367,22 @@
                     <p class="text-center text-muted fragment fade-in">How players learn and understand games</p>
                     <br>
                     <div class="two-columns">
-                        <div class="column fragment fade-in">
+                        <div class="column">
                             <h3><i class="fa-solid fa-lightbulb"></i> What are Schemas?</h3>
-                            <ul class="text-xl">
-                                <li class="fragment fade-in">Mental frameworks for organizing information</li>
-                                <li class="fragment fade-in">Built through experience and play</li>
-                                <li class="fragment fade-in">Allow players to predict outcomes</li>
-                                <li class="fragment fade-in">Enable strategic thinking</li>
+                            <ul class="text-xl fragment fade-in">
+                                <li>Mental frameworks for organizing information</li>
+                                <li>Built through experience and play</li>
+                                <li>Allow players to predict outcomes</li>
+                                <li>Enable strategic thinking</li>
                             </ul>
                         </div>
-                        <div class="column fragment fade-in">
+                        <div class="column">
                             <h3><i class="fa-solid fa-graduation-cap"></i> In Cut The Rope</h3>
-                            <ul class="text-xl">
-                                <li class="fragment fade-in">Players learn: "Cut rope → Ball swings"</li>
-                                <li class="fragment fade-in">Players learn: "Momentum carries ball forward"</li>
-                                <li class="fragment fade-in">Players learn: "Timing matters for accuracy"</li>
-                                <li class="fragment fade-in">Players build predictive mental models</li>
+                            <ul class="text-xl fragment fade-in">
+                                <li>Players learn: "Cut rope → Ball swings"</li>
+                                <li>Players learn: "Momentum carries ball forward"</li>
+                                <li>Players learn: "Timing matters for accuracy"</li>
+                                <li>Players build predictive mental models</li>
                             </ul>
                         </div>
                     </div>
@@ -482,10 +494,10 @@
                     <div class="flow-sections">
                         <div class="flow-text fragment fade-in">
                             <h3><i class="fa-solid fa-chart-area"></i> The Flow Channel</h3>
-                            <ul class="text-xl">
-                                <li class="fragment fade-in"><strong>Level 1-2:</strong> Easy entry, learning basics</li>
-                                <li class="fragment fade-in"><strong>Level 3-4:</strong> Balanced challenge</li>
-                                <li class="fragment fade-in"><strong>Level 5-6:</strong> High skill requirement</li>
+                            <ul class="text-xl fragment fade-in">
+                                <li><strong>Level 1-2:</strong> Easy entry, learning basics</li>
+                                <li><strong>Level 3-4:</strong> Balanced challenge</li>
+                                <li><strong>Level 5-6:</strong> High skill requirement</li>
                             </ul>
                             <br>
                             <div class="callout callout-blue fragment slide-in-left">
@@ -722,13 +734,16 @@
             controls: false,
             progress: false,
             slideNumber: true,
-            hash: true,
-            transition: 'slide',
+            hash: false,
+            transition: 'none',
+            transitionSpeed: 'default',
             center: false,
             width: 1280,
             height: 720,
-            fragmentInURL: true,
-            slideNumber: 'c/t'
+            fragmentInURL: false,
+            backgroundTransition: 'fade',
+            overview: false,
+            keyboard: true
         });
     </script>
 </body>
