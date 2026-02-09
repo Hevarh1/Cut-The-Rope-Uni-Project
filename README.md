@@ -267,13 +267,13 @@ Contributions are welcome! Feel free to:
 ## 👥 Team
 
 **Developed by:**
-- **Muhammad Yaseen** - Game Design & Development
-- **Hevar Hemin** - Game Design & Development
-- **Revar Azim** - Game Design & Development
+- **Muhammad Yaseen** 
+- **Hevar Hemin** 
+- **Revar Azim**
 
 **Supervisor:** Mrs. Rina D. Zarro
 
-**Course:** Game Design - University of Kurdistan Hewlêr
+**Course:** Game Design - University of Salahaddin - Erbil
 
 ---
 
