@@ -131,6 +131,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -140,9 +141,11 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     gap: 18px;
     min-height: 0;
     overflow: hidden;
+    width: 100%;
 }
 
 .reveal h1 {
@@ -162,10 +165,11 @@
     font-size: 42px;
     font-weight: 700;
     color: var(--text-bright);
-    margin: 0 0 10px 0;
+    margin: 0 0 28px 0;
     letter-spacing: -0.5px;
     text-transform: none;
     text-shadow: none;
+    width: 100%;
 }
 
 .reveal h3 {
@@ -173,9 +177,10 @@
     font-size: 22px;
     font-weight: 600;
     color: var(--green);
-    margin: 0 0 10px 0;
+    margin: 0 0 18px 0;
     text-transform: none;
     text-shadow: none;
+    width: 100%;
 }
 
 .reveal h4 {
@@ -193,6 +198,7 @@
     line-height: 1.7;
     margin: 0 0 10px 0;
     color: var(--text);
+    width: 100%;
 }
 
 .reveal em {
@@ -296,6 +302,7 @@
     display: flex;
     gap: 24px;
     margin-top: 12px;
+    justify-content: center;
 }
 
 .credit-card {
@@ -356,7 +363,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 10px;
+    margin-bottom: 18px;
 }
 
 .section-break p {
@@ -374,6 +381,7 @@
     flex: 1;
     min-height: 0;
     text-align: left;
+    width: 100%;
 }
 
 .split-main,
@@ -402,6 +410,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
 }
 
 .feature-chip {
@@ -445,6 +454,8 @@
     padding: 14px 18px;
     margin-top: 10px;
     text-align: left;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .inline-note.warm {
@@ -487,6 +498,7 @@ kbd {
     gap: 24px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .image-frame {
@@ -527,6 +539,7 @@ kbd {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
+    width: 100%;
 }
 
 .check-card {
@@ -571,6 +584,7 @@ kbd {
     margin-top: 6px !important;
     font-weight: 600;
     letter-spacing: .3px;
+    width: 100%;
 }
 
 /* ---- STYLED LIST ---- */
@@ -578,8 +592,9 @@ kbd {
 .styled-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 10px 0;
+    margin: 0 auto 10px auto;
     text-align: left;
+    width: fit-content;
 }
 
 .styled-list li {
@@ -605,6 +620,7 @@ kbd {
     display: flex;
     flex-direction: column;
     gap: 7px;
+    width: 100%;
 }
 
 .prog-item {
@@ -652,6 +668,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .quad-card {
@@ -710,6 +727,7 @@ kbd {
     color: var(--text-dim);
     padding: 10px 0 0;
     font-style: italic;
+    width: 100%;
 }
 
 .bottom-note strong {
@@ -724,6 +742,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .mech-card {
@@ -781,6 +800,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .dyn-card {
@@ -853,6 +873,7 @@ kbd {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+    width: 100%;
 }
 
 .aes-card {
@@ -919,6 +940,8 @@ kbd {
     line-height: 1.65;
     max-width: 700px;
     text-align: left;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* ---- PERSPECTIVE SPLIT (MDA) ---- */
@@ -929,6 +952,7 @@ kbd {
     align-items: stretch;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .persp-card {
@@ -1007,6 +1031,7 @@ kbd {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    width: 100%;
 }
 
 .fun-row {
@@ -1122,6 +1147,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .bartle-card {
@@ -1222,6 +1248,7 @@ kbd {
     display: flex;
     flex-direction: column;
     gap: 11px;
+    width: 100%;
 }
 
 .bar-row {
@@ -1269,6 +1296,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .sdt-card {
@@ -1331,6 +1359,7 @@ kbd {
     gap: 16px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .tet-card {
@@ -1423,6 +1452,7 @@ kbd {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    width: 100%;
 }
 
 .take-item {
@@ -1447,7 +1477,7 @@ kbd {
     font-family: 'Playfair Display', serif;
     font-size: 32px;
     font-weight: 700;
-    color: rgba(255, 255, 255, .08);
+    color: rgb(227, 31, 31);
     line-height: 1;
     flex-shrink: 0;
     min-width: 42px;
