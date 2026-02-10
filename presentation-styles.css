@@ -1402,7 +1402,7 @@
 /* Base fragment styles - simplified */
 .reveal .slides section .fragment {
     transition: opacity 0.3s ease;
-    overflow-x: hidden;
+    /* overflow-x: hidden; */
     max-width: 100%;
 }
 
