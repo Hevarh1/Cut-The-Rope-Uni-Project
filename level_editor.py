@@ -4,12 +4,8 @@ Cut The Rope - Level Editor
 Click to place objects, level data automatically saves to a file.
 
 Controls:
-- 1: Place Candy (red circle)
-- 2: Place Anchor (grey circle)
-- 3: Place Target Box (green box)
-- 4: Place Platform (grey rectangle)
-- 5: Place Spike (red rectangle)
-- Click: Place selected object
+- Click buttons to select object type
+- Left Click: Place selected object
 - Right Click: Delete object at mouse
 - S: Save level (prompts for name in console)
 - C: Clear all objects
@@ -75,7 +71,26 @@ class LevelEditor:
         
         # Level counter
         self.level_counter = 1
-        
+
+        # Tool buttons - placed at bottom of screen
+        button_y = HEIGHT - 70
+        button_width = 100
+        button_height = 45
+        button_spacing = 110
+        start_x = 20
+
+        self.buttons = {
+            'candy': pygame.Rect(start_x, button_y, button_width, button_height),
+            'anchor': pygame.Rect(start_x + button_spacing, button_y, button_width, button_height),
+            'target': pygame.Rect(start_x + button_spacing * 2, button_y, button_width, button_height),
+            'platform': pygame.Rect(start_x + button_spacing * 3, button_y, button_width, button_height),
+            'spike': pygame.Rect(start_x + button_spacing * 4, button_y, button_width, button_height),
+        }
+
+        # Clear and Save buttons
+        self.clear_button = pygame.Rect(start_x + button_spacing * 5 + 20, button_y, 80, button_height)
+        self.save_button = pygame.Rect(start_x + button_spacing * 6 + 30, button_y, 80, button_height)
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -108,8 +123,33 @@ class LevelEditor:
                     self.save_level()
             
             if event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+
+                # Check tool button clicks
                 if event.button == 1:  # Left click
-                    self.place_object(event.pos)
+                    button_clicked = False
+                    for tool_name, button_rect in self.buttons.items():
+                        if button_rect.collidepoint(mx, my):
+                            self.mode = tool_name
+                            self.rect_start = None
+                            button_clicked = True
+                            break
+
+                    # Check clear button
+                    if self.clear_button.collidepoint(mx, my):
+                        self.objects.clear()
+                        self.rect_start = None
+                        button_clicked = True
+
+                    # Check save button
+                    elif self.save_button.collidepoint(mx, my):
+                        self.save_level()
+                        button_clicked = True
+
+                    # If no button clicked, place object
+                    if not button_clicked:
+                        self.place_object(event.pos)
+
                 elif event.button == 3:  # Right click
                     self.delete_object_at(event.pos)
     
@@ -395,26 +435,92 @@ LevelData(
         pygame.display.flip()
     
     def draw_hud(self):
-        # Mode indicator
-        mode_text = self.big_font.render(f"Mode: {self.mode.upper()}", True, COLOR_TEXT)
+        # Draw toolbar background
+        toolbar_rect = pygame.Rect(0, HEIGHT - 80, WIDTH, 80)
+        pygame.draw.rect(self.screen, (20, 23, 32), toolbar_rect)
+        pygame.draw.line(self.screen, (50, 55, 70), (0, HEIGHT - 80), (WIDTH, HEIGHT - 80), 2)
+
+        # Draw tool buttons
+        button_configs = {
+            'candy': {'name': 'Candy', 'color': COLOR_PAYLOAD},
+            'anchor': {'name': 'Anchor', 'color': COLOR_ANCHOR},
+            'target': {'name': 'Target', 'color': COLOR_TARGET},
+            'platform': {'name': 'Platform', 'color': COLOR_PLATFORM},
+            'spike': {'name': 'Spike', 'color': COLOR_SPIKE},
+        }
+
+        for tool_name, button_rect in self.buttons.items():
+            config = button_configs[tool_name]
+            is_selected = (self.mode == tool_name)
+
+            # Button background
+            bg_color = config['color'] if is_selected else (45, 50, 65)
+            pygame.draw.rect(self.screen, bg_color, button_rect, border_radius=8)
+
+            # Button border
+            border_color = (255, 255, 255) if is_selected else (70, 75, 90)
+            border_width = 3 if is_selected else 1
+            pygame.draw.rect(self.screen, border_color, button_rect, width=border_width, border_radius=8)
+
+            # Draw icon preview
+            icon_center = (button_rect.centerx, button_rect.centery - 6)
+            if tool_name == 'candy':
+                pygame.draw.circle(self.screen, (200, 55, 55), icon_center, 10)
+                pygame.draw.circle(self.screen, (150, 40, 40), icon_center, 10, 2)
+            elif tool_name == 'anchor':
+                pygame.draw.circle(self.screen, (90, 90, 110), icon_center, 8)
+                pygame.draw.circle(self.screen, (50, 50, 70), icon_center, 4)
+            elif tool_name == 'target':
+                rect = pygame.Rect(0, 0, 24, 16)
+                rect.center = icon_center
+                pygame.draw.rect(self.screen, (50, 180, 90), rect, 2)
+                pygame.draw.line(self.screen, (50, 180, 90), (rect.left, rect.top), (rect.left, rect.bottom), 2)
+                pygame.draw.line(self.screen, (50, 180, 90), (rect.right, rect.top), (rect.right, rect.bottom), 2)
+                pygame.draw.line(self.screen, (50, 180, 90), (rect.left, rect.bottom), (rect.right, rect.bottom), 2)
+            elif tool_name == 'platform':
+                rect = pygame.Rect(0, 0, 28, 12)
+                rect.center = icon_center
+                pygame.draw.rect(self.screen, (70, 70, 90), rect)
+            elif tool_name == 'spike':
+                rect = pygame.Rect(0, 0, 28, 12)
+                rect.center = icon_center
+                pygame.draw.rect(self.screen, (160, 35, 35), rect)
+
+            # Button label
+            label = self.font.render(config['name'], True, (220, 220, 230))
+            label_rect = label.get_rect(center=(button_rect.centerx, button_rect.bottom - 10))
+            self.screen.blit(label, label_rect)
+
+        # Draw Clear button
+        pygame.draw.rect(self.screen, (80, 40, 40), self.clear_button, border_radius=8)
+        pygame.draw.rect(self.screen, (120, 60, 60), self.clear_button, width=1, border_radius=8)
+        clear_label = self.font.render("Clear", True, (220, 220, 230))
+        clear_rect = clear_label.get_rect(center=self.clear_button.center)
+        self.screen.blit(clear_label, clear_rect)
+
+        # Draw Save button
+        pygame.draw.rect(self.screen, (40, 80, 40), self.save_button, border_radius=8)
+        pygame.draw.rect(self.screen, (60, 120, 60), self.save_button, width=1, border_radius=8)
+        save_label = self.font.render("Save", True, (220, 220, 230))
+        save_rect = save_label.get_rect(center=self.save_button.center)
+        self.screen.blit(save_label, save_rect)
+
+        # Instructions at top left
+        mode_text = self.big_font.render(f"Tool: {self.mode.upper()}", True, COLOR_TEXT)
         self.screen.blit(mode_text, (20, 20))
-        
-        # Instructions
+
         instructions = [
-            "1: Payload | 2: Anchor | 3: Target | 4: Platform | 5: Spike",
-            "Left Click: Place | Right Click: Delete",
-            "S: Save Level | C: Clear All | ESC: Quit",
-            "",
-            "For rectangles: Click twice (top-left, then bottom-right)"
+            "Left Click: Place object | Right Click: Delete",
+            "ESC: Quit | For rectangles: Click twice (corners)"
         ]
-        
+
         y = 60
         for line in instructions:
             surf = self.font.render(line, True, (180, 180, 200))
             self.screen.blit(surf, (20, y))
             y += 22
-        
-        # Object count
+
+        # Object count display (top right)
         counts = {
             'candy': 0,
             'anchor': 0,
@@ -424,15 +530,22 @@ LevelData(
         }
         for obj in self.objects:
             counts[obj.type] += 1
-        
-        y = HEIGHT - 120
-        self.screen.blit(self.font.render("Objects:", True, COLOR_TEXT), (20, y))
-        y += 25
+
+        # Draw counts panel
+        panel_x = WIDTH - 150
+        panel_y = 15
+        pygame.draw.rect(self.screen, (20, 23, 32), (panel_x, panel_y, 135, 140), border_radius=8)
+        pygame.draw.rect(self.screen, (50, 55, 70), (panel_x, panel_y, 135, 140), width=1, border_radius=8)
+
+        title = self.font.render("Objects:", True, COLOR_TEXT)
+        self.screen.blit(title, (panel_x + 10, panel_y + 10))
+
+        y = panel_y + 40
         for obj_type, count in counts.items():
-            if count > 0:
-                text = self.font.render(f"  {obj_type}: {count}", True, (150, 150, 170))
-                self.screen.blit(text, (20, y))
-                y += 22
+            color = button_configs[obj_type]['color']
+            text = self.font.render(f"{obj_type.capitalize()}: {count}", True, color)
+            self.screen.blit(text, (panel_x + 10, y))
+            y += 18
     
     def run(self):
         while True:
