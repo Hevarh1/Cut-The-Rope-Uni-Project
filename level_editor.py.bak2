@@ -1,0 +1,1052 @@
+"""
+Cut The Rope — Level Editor  (v4)
+
+Create & edit custom levels with variable dimensions.
+Everything saves automatically to data/custom_levels.json
+so they show up in the game's level selector.
+
+Controls
+────────
+• Toolbar at bottom: click a tool  (Candy / Anchor / Target / Platform / Spike)
+• Left Click:  place selected object  (rectangles need two clicks — corners)
+• Right Click: delete object under cursor
+• Scroll Wheel: zoom in / out (on canvas)
+• Space + Drag / Middle Mouse: pan the canvas
+• 0: reset zoom & pan
+• Tab: toggle sidebar
+• ESC: quit editor
+"""
+
+import sys, os, json, math
+import pygame
+from typing import List, Tuple, Optional, Dict
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+WIDTH, HEIGHT = 720, 1280
+PYMUNK_HEIGHT = 1280
+SIDEBAR_W = 250
+TOOLBAR_H = 100
+
+COLOR_BG        = (15, 18, 25)
+COLOR_PAYLOAD   = (220, 60, 60)
+COLOR_ANCHOR    = (100, 100, 120)
+COLOR_TARGET    = (60, 200, 100)
+COLOR_PLATFORM  = (80, 80, 100)
+COLOR_SPIKE     = (180, 40, 40)
+COLOR_MAGNET    = (100, 180, 255)
+COLOR_SLINGSHOT = (255, 180, 60)
+COLOR_TEXT       = (230, 230, 240)
+COLOR_GRID       = (30, 35, 45)
+COLOR_SUCCESS    = (80, 220, 120)
+COLOR_ACCENT     = (140, 120, 220)
+COLOR_SIDEBAR_BG = (22, 25, 35)
+
+
+def pymunk_y(py_y: int, level_h: int = PYMUNK_HEIGHT) -> float:
+    """Convert a pygame-style world Y to pymunk Y (flip).
+    
+    *level_h* should be the level's height so that the Y-axis
+    is correctly flipped for non-default-sized levels.
+    """
+    return float(level_h - py_y)
+
+
+# ---------------------------------------------------------------------------
+# Persistence (same path / format as src.savedata)
+# ---------------------------------------------------------------------------
+_BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR    = os.path.join(_BASE_DIR, "data")
+CUSTOM_FILE = os.path.join(DATA_DIR, "custom_levels.json")
+
+
+def _ensure_data():
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def load_custom_levels() -> List[dict]:
+    if os.path.exists(CUSTOM_FILE):
+        try:
+            with open(CUSTOM_FILE, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return []
+    return []
+
+
+def save_custom_levels(levels: List[dict]):
+    _ensure_data()
+    with open(CUSTOM_FILE, "w") as f:
+        json.dump(levels, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def lerp_c(a, b, t):
+    t = max(0.0, min(1.0, t))
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def draw_star(surface, cx, cy, size, filled):
+    pts = []
+    for k in range(10):
+        angle = math.pi / 2 + k * math.pi / 5
+        r = size if k % 2 == 0 else size * 0.4
+        pts.append((cx + r * math.cos(angle), cy - r * math.sin(angle)))
+    if filled:
+        pygame.draw.polygon(surface, (255, 210, 50), pts)
+        pygame.draw.polygon(surface, (255, 240, 120), pts, width=1)
+    else:
+        pygame.draw.polygon(surface, (50, 55, 70), pts)
+        pygame.draw.polygon(surface, (75, 80, 100), pts, width=1)
+
+
+# ---------------------------------------------------------------------------
+# Text input widget
+# ---------------------------------------------------------------------------
+class TextInput:
+    def __init__(self, rect: pygame.Rect, font, label="", default="", numeric=False):
+        self.rect = rect
+        self.font = font
+        self.label = label
+        self.text = default
+        self.numeric = numeric
+        self.active = False
+        self._cursor_vis = True
+        self._ct = 0.0
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.active = self.rect.collidepoint(event.pos)
+        if event.type == pygame.KEYDOWN and self.active:
+            if event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif event.key in (pygame.K_RETURN, pygame.K_TAB):
+                self.active = False
+            else:
+                ch = event.unicode
+                if ch:
+                    if self.numeric:
+                        if ch in "0123456789.":
+                            self.text += ch
+                    else:
+                        self.text += ch
+
+    def update(self, dt):
+        self._ct += dt
+        if self._ct > 0.5:
+            self._ct = 0; self._cursor_vis = not self._cursor_vis
+
+    def draw(self, screen):
+        if self.label:
+            screen.blit(self.font.render(self.label, True, (160, 165, 185)),
+                        (self.rect.x, self.rect.y - 16))
+        bg = (48, 52, 68) if not self.active else (60, 65, 85)
+        pygame.draw.rect(screen, bg, self.rect, border_radius=6)
+        brd = COLOR_ACCENT if self.active else (60, 65, 82)
+        pygame.draw.rect(screen, brd, self.rect, width=2, border_radius=6)
+        txt = self.font.render(self.text, True, COLOR_TEXT)
+        screen.blit(txt, (self.rect.x + 6, self.rect.y + 4))
+        if self.active and self._cursor_vis:
+            cx = self.rect.x + 8 + txt.get_width()
+            pygame.draw.line(screen, COLOR_TEXT, (cx, self.rect.y + 5),
+                             (cx, self.rect.bottom - 5), 1)
+
+    @property
+    def value_float(self):
+        try: return float(self.text)
+        except ValueError: return 0.0
+
+
+# ---------------------------------------------------------------------------
+# Editor object
+# ---------------------------------------------------------------------------
+class EditorObject:
+    def __init__(self, obj_type: str, data: dict):
+        self.type = obj_type
+        self.data = data
+
+
+# ---------------------------------------------------------------------------
+# Level Editor
+# ---------------------------------------------------------------------------
+class LevelEditor:
+    def __init__(self):
+        pygame.init()
+        pygame.display.set_caption("Cut The Rope — Level Editor")
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.clock  = pygame.time.Clock()
+        self.font   = pygame.font.SysFont("Arial", 17)
+        self.big_font = pygame.font.SysFont("Arial", 22)
+        self.tiny_font = pygame.font.SysFont("Arial", 13)
+
+        self.objects: List[EditorObject] = []
+        self.mode = "candy"
+        self.rect_start: Optional[Tuple[int, int]] = None
+        self.editing_index = -1
+        self.custom_levels = load_custom_levels()
+
+        self.toast_msg = ""
+        self.toast_timer = 0.0
+
+        # Camera / zoom state
+        self.cam_x = 0.0   # camera offset in world coords
+        self.cam_y = 0.0
+        self.zoom = 1.0
+        self._panning = False
+        self._pan_last: Optional[Tuple[int, int]] = None
+
+        # Level dimensions (world size)
+        self.level_width = 720
+        self.level_height = 1280
+
+        # Sidebar state
+        self.sidebar_open = True
+        self._sidebar_x = 0.0  # animated x (0 = fully open)
+        self._sidebar_target = 0.0
+        self._toggle_btn = pygame.Rect(0, 0, 28, 60)  # will be positioned in draw
+
+        # Side panel text inputs (positioned relative to sidebar)
+        self._rebuild_sidebar_inputs()
+
+        # Slingshot placement helper (needs two clicks for pair)
+        self._slingshot_first: Optional[Tuple[float, float]] = None
+
+        # Toolbar buttons — two rows for portrait window (narrower)
+        btn_y1 = HEIGHT - 90
+        btn_y2 = HEIGHT - 45
+        bw, bh, sp = 90, 38, 98
+        sx = 10
+        self.buttons: Dict[str, pygame.Rect] = {
+            "candy":    pygame.Rect(sx,          btn_y1, bw, bh),
+            "anchor":   pygame.Rect(sx + sp,     btn_y1, bw, bh),
+            "target":   pygame.Rect(sx + sp * 2, btn_y1, bw, bh),
+            "platform": pygame.Rect(sx + sp * 3, btn_y1, bw, bh),
+            "spike":    pygame.Rect(sx,          btn_y2, bw, bh),
+            "magnet":   pygame.Rect(sx + sp,     btn_y2, bw, bh),
+            "slingshot": pygame.Rect(sx + sp * 2, btn_y2, bw, bh),
+        }
+        self.clear_btn = pygame.Rect(sx + sp * 3, btn_y2, 80, bh)
+        self.save_btn  = pygame.Rect(sx + sp * 3 + 90, btn_y2, 80, bh)
+
+        self.load_buttons: List[Tuple[pygame.Rect, int]] = []
+        self.side_scroll_y = 0
+
+    def _rebuild_sidebar_inputs(self):
+        px = WIDTH - SIDEBAR_W + 15
+        iw, ih = SIDEBAR_W - 30, 26
+        self.input_name  = TextInput(pygame.Rect(px, 200, iw, ih),
+                                     self.font, "Name", "My Level")
+        self.input_star3 = TextInput(pygame.Rect(px, 260, 55, ih),
+                                     self.font, "3-star", "5", numeric=True)
+        self.input_star2 = TextInput(pygame.Rect(px + 72, 260, 55, ih),
+                                     self.font, "2-star", "10", numeric=True)
+        self.input_star1 = TextInput(pygame.Rect(px + 144, 260, 55, ih),
+                                     self.font, "1-star", "20", numeric=True)
+        self.input_width = TextInput(pygame.Rect(px, 320, 90, ih),
+                                     self.font, "Width", "720", numeric=True)
+        self.input_height = TextInput(pygame.Rect(px + 110, 320, 90, ih),
+                                      self.font, "Height", "1280", numeric=True)
+        self.text_inputs = [self.input_name, self.input_star3,
+                            self.input_star2, self.input_star1,
+                            self.input_width, self.input_height]
+        self.new_btn = pygame.Rect(px, 370, 95, 28)
+        self.del_btn = pygame.Rect(px + 110, 370, 95, 28)
+
+    # ------------------------------------------------------------------
+    # Canvas boundary (area where objects can be placed)
+    # ------------------------------------------------------------------
+    def _canvas_right(self) -> int:
+        """Right edge of the editable canvas area."""
+        if self.sidebar_open:
+            return WIDTH - SIDEBAR_W
+        return WIDTH
+
+    # ------------------------------------------------------------------
+    # Coordinate transforms — screen ↔ world
+    # ------------------------------------------------------------------
+    def screen_to_world(self, sx: int, sy: int) -> Tuple[float, float]:
+        """Convert screen pixel to world (pygame) coordinate."""
+        wx = (sx / self.zoom) + self.cam_x
+        wy = (sy / self.zoom) + self.cam_y
+        return wx, wy
+
+    def world_to_screen(self, wx: float, wy: float) -> Tuple[int, int]:
+        """Convert world (pygame) coordinate to screen pixel."""
+        sx = int((wx - self.cam_x) * self.zoom)
+        sy = int((wy - self.cam_y) * self.zoom)
+        return sx, sy
+
+    def _apply_dim_inputs(self):
+        """Read dimension inputs and update level_width/height."""
+        w = int(self.input_width.value_float) if self.input_width.value_float > 0 else 720
+        h = int(self.input_height.value_float) if self.input_height.value_float > 0 else 1280
+        self.level_width = max(400, min(5000, w))
+        self.level_height = max(400, min(5000, h))
+
+    # ------------------------------------------------------------------
+    # Events
+    # ------------------------------------------------------------------
+    def handle_events(self):
+        keys = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); sys.exit()
+
+            # Let text inputs handle events first
+            if self.sidebar_open:
+                for ti in self.text_inputs:
+                    ti.handle_event(event)
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit(); sys.exit()
+                elif event.key == pygame.K_TAB:
+                    self.sidebar_open = not self.sidebar_open
+                    self._sidebar_target = 0.0 if self.sidebar_open else SIDEBAR_W
+                elif event.key == pygame.K_c and not any(t.active for t in self.text_inputs):
+                    self.objects.clear(); self.rect_start = None
+                elif event.key == pygame.K_0:
+                    # Reset zoom + pan
+                    self.zoom = 1.0; self.cam_x = 0.0; self.cam_y = 0.0
+
+            # Pan start (space held + left drag, or middle mouse)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 2:  # middle mouse
+                    self._panning = True
+                    self._pan_last = event.pos
+                    continue
+                if event.button == 1 and keys[pygame.K_SPACE]:
+                    self._panning = True
+                    self._pan_last = event.pos
+                    continue
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button in (1, 2) and self._panning:
+                    self._panning = False
+                    self._pan_last = None
+                    continue
+
+            if event.type == pygame.MOUSEMOTION and self._panning and self._pan_last:
+                dx = event.pos[0] - self._pan_last[0]
+                dy = event.pos[1] - self._pan_last[1]
+                self.cam_x -= dx / self.zoom
+                self.cam_y -= dy / self.zoom
+                self._pan_last = event.pos
+                continue
+
+            if event.type == pygame.MOUSEWHEEL:
+                mx, my = pygame.mouse.get_pos()
+                if self.sidebar_open and mx >= self._canvas_right():
+                    self.side_scroll_y = max(-400, min(0, self.side_scroll_y + event.y * 25))
+                elif my < HEIGHT - TOOLBAR_H:
+                    # Zoom towards mouse cursor
+                    old_zoom = self.zoom
+                    factor = 1.12 if event.y > 0 else 1 / 1.12
+                    self.zoom = max(0.15, min(5.0, self.zoom * factor))
+                    # Adjust camera so the world point under cursor stays fixed
+                    wx, wy = (mx / old_zoom) + self.cam_x, (my / old_zoom) + self.cam_y
+                    self.cam_x = wx - mx / self.zoom
+                    self.cam_y = wy - my / self.zoom
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+                # Don't place objects while space is held (panning)
+                if keys[pygame.K_SPACE]:
+                    continue
+                if event.button == 1:
+                    # Toggle button
+                    if self._toggle_btn.collidepoint(mx, my):
+                        self.sidebar_open = not self.sidebar_open
+                        self._sidebar_target = 0.0 if self.sidebar_open else SIDEBAR_W
+                        continue
+                    # Sidebar area — consume click, don't place objects
+                    if self.sidebar_open and mx >= self._canvas_right():
+                        self._handle_sidebar_click(mx, my)
+                        continue
+                    # Toolbar
+                    if self._handle_toolbar_click(mx, my):
+                        continue
+                    # Canvas — convert to world coords
+                    self.place_object(event.pos)
+                elif event.button == 3:
+                    if mx < self._canvas_right():
+                        self.delete_object_at(event.pos)
+
+        # Keep level dims in sync with inputs
+        self._apply_dim_inputs()
+
+    def _handle_toolbar_click(self, mx, my) -> bool:
+        for name, r in self.buttons.items():
+            if r.collidepoint(mx, my):
+                self.mode = name; self.rect_start = None; return True
+        if self.clear_btn.collidepoint(mx, my):
+            self.objects.clear(); self.rect_start = None; return True
+        if self.save_btn.collidepoint(mx, my):
+            self.save_level(); return True
+        return False
+
+    def _handle_sidebar_click(self, mx, my):
+        if self.new_btn.collidepoint(mx, my):
+            self._new_level(); return
+        if self.del_btn.collidepoint(mx, my):
+            self._delete_current(); return
+        for r, idx in self.load_buttons:
+            if r.collidepoint(mx, my):
+                self._load_level(idx); return
+
+    # ------------------------------------------------------------------
+    # Place / Delete
+    # ------------------------------------------------------------------
+    def place_object(self, pos):
+        mx, my = pos
+        if my > HEIGHT - TOOLBAR_H - 5:
+            return
+        if mx >= self._canvas_right():
+            return
+        # Convert screen click to world coordinates
+        wx, wy = self.screen_to_world(mx, my)
+        pmy = pymunk_y(int(wy), self.level_height)
+
+        if self.mode == "candy":
+            self.objects = [o for o in self.objects if o.type != "candy"]
+            self.objects.append(EditorObject("candy", {"x": int(wx), "y": pmy}))
+        elif self.mode == "anchor":
+            self.objects.append(EditorObject("anchor", {"x": int(wx), "y": pmy}))
+        elif self.mode == "magnet":
+            self.objects.append(EditorObject("magnet",
+                {"x": int(wx), "y": pmy, "r": 120}))
+        elif self.mode == "slingshot":
+            if self._slingshot_first is None:
+                self._slingshot_first = (int(wx), pmy)
+            else:
+                ax, ay = self._slingshot_first
+                bx, by = int(wx), pmy
+                self.objects.append(EditorObject("slingshot",
+                    {"ax": ax, "ay": ay, "bx": bx, "by": by}))
+                self._slingshot_first = None
+        elif self.mode in ("target", "platform", "spike"):
+            if self.rect_start is None:
+                self.rect_start = (wx, wy)  # store in world coords
+            else:
+                x1, y1 = self.rect_start; x2, y2 = wx, wy
+                left, right = min(x1, x2), max(x1, x2)
+                top, bottom = min(y1, y2), max(y1, y2)
+                w, h = right - left, bottom - top
+                pm_bottom = pymunk_y(int(bottom), self.level_height)
+                if self.mode == "target":
+                    self.objects = [o for o in self.objects if o.type != "target"]
+                    self.objects.append(EditorObject("target",
+                        {"x": int(left + w / 2), "y": int(pm_bottom + h / 2),
+                         "w": int(w), "h": int(h)}))
+                elif self.mode == "platform":
+                    self.objects.append(EditorObject("platform",
+                        {"x": int(left), "y": int(pm_bottom),
+                         "w": int(w), "h": int(h)}))
+                elif self.mode == "spike":
+                    self.objects.append(EditorObject("spike",
+                        {"x": int(left), "y": int(pm_bottom),
+                         "w": int(w), "h": int(h)}))
+                self.rect_start = None
+
+    def delete_object_at(self, pos):
+        mx, my = pos
+        # Convert to world coordinates
+        wx, wy = self.screen_to_world(mx, my)
+        lh = self.level_height
+        remove = []
+        for obj in self.objects:
+            if obj.type in ("candy", "anchor"):
+                sy = lh - obj.data["y"]
+                if math.hypot(wx - obj.data["x"], wy - sy) < 20 / self.zoom:
+                    remove.append(obj)
+            elif obj.type == "magnet":
+                sy = lh - obj.data["y"]
+                if math.hypot(wx - obj.data["x"], wy - sy) < 25 / self.zoom:
+                    remove.append(obj)
+            elif obj.type == "slingshot":
+                d = obj.data
+                sy_a = lh - d["ay"]
+                sy_b = lh - d["by"]
+                if (math.hypot(wx - d["ax"], wy - sy_a) < 25 / self.zoom or
+                    math.hypot(wx - d["bx"], wy - sy_b) < 25 / self.zoom):
+                    remove.append(obj)
+            elif obj.type == "target":
+                sy = lh - obj.data["y"]
+                r = pygame.Rect(obj.data["x"] - obj.data["w"] / 2,
+                                sy - obj.data["h"] / 2,
+                                obj.data["w"], obj.data["h"])
+                if r.collidepoint(wx, wy):
+                    remove.append(obj)
+            elif obj.type in ("platform", "spike"):
+                sy = lh - obj.data["y"] - obj.data["h"]
+                r = pygame.Rect(obj.data["x"], sy, obj.data["w"], obj.data["h"])
+                if r.collidepoint(wx, wy):
+                    remove.append(obj)
+        for o in remove:
+            self.objects.remove(o)
+
+    # ------------------------------------------------------------------
+    # Save / Load / New / Delete
+    # ------------------------------------------------------------------
+    def _collect_level_dict(self) -> dict:
+        candy = None; anchors = []; target = None; platforms = []; spikes = []
+        magnet_anchors = []; slingshot_pairs = []
+        for obj in self.objects:
+            d = obj.data
+            if obj.type == "candy":
+                candy = [int(d["x"]), int(d["y"])]
+            elif obj.type == "anchor":
+                anchors.append([int(d["x"]), int(d["y"])])
+            elif obj.type == "target":
+                target = {"pos": [int(d["x"]), int(d["y"])],
+                          "size": [int(d["w"]), int(d["h"])]}
+            elif obj.type == "platform":
+                platforms.append([int(d["x"]), int(d["y"]),
+                                  int(d["w"]), int(d["h"])])
+            elif obj.type == "spike":
+                spikes.append([int(d["x"]), int(d["y"]),
+                               int(d["w"]), int(d["h"])])
+            elif obj.type == "magnet":
+                magnet_anchors.append([int(d["x"]), int(d["y"]),
+                                        int(d.get("r", 120))])
+            elif obj.type == "slingshot":
+                slingshot_pairs.append([[int(d["ax"]), int(d["ay"])],
+                                         [int(d["bx"]), int(d["by"])]])
+        result = {
+            "name":       self.input_name.text.strip() or "Custom Level",
+            "difficulty":  1,
+            "candy_pos":   candy or [360, 1000],
+            "anchors":     anchors or [[360, 1200]],
+            "target_pos":  target["pos"] if target else [360, 200],
+            "target_size": target["size"] if target else [140, 90],
+            "platforms":   platforms,
+            "spikes":      spikes,
+            "star_times":  [self.input_star3.value_float or 5.0,
+                            self.input_star2.value_float or 10.0,
+                            self.input_star1.value_float or 20.0],
+            "width":       self.level_width,
+            "height":      self.level_height,
+        }
+        if magnet_anchors:
+            result["magnet_anchors"] = magnet_anchors
+        if slingshot_pairs:
+            result["slingshot_pairs"] = slingshot_pairs
+        return result
+
+    def save_level(self):
+        ld = self._collect_level_dict()
+        self.custom_levels = load_custom_levels()
+        if 0 <= self.editing_index < len(self.custom_levels):
+            self.custom_levels[self.editing_index] = ld
+        else:
+            self.custom_levels.append(ld)
+            self.editing_index = len(self.custom_levels) - 1
+        save_custom_levels(self.custom_levels)
+        self.toast_msg = f"Saved: {ld['name']}"; self.toast_timer = 3.0
+
+    def _load_level(self, idx):
+        if idx < 0 or idx >= len(self.custom_levels):
+            return
+        d = self.custom_levels[idx]
+        self.editing_index = idx
+        self.objects.clear(); self.rect_start = None; self._slingshot_first = None
+        cp = d.get("candy_pos", [360, 1000])
+        self.objects.append(EditorObject("candy", {"x": cp[0], "y": cp[1]}))
+        for a in d.get("anchors", []):
+            self.objects.append(EditorObject("anchor", {"x": a[0], "y": a[1]}))
+        tp = d.get("target_pos"); ts = d.get("target_size")
+        if tp and ts:
+            self.objects.append(EditorObject("target",
+                {"x": tp[0], "y": tp[1], "w": ts[0], "h": ts[1]}))
+        for p in d.get("platforms", []):
+            self.objects.append(EditorObject("platform",
+                {"x": p[0], "y": p[1], "w": p[2], "h": p[3]}))
+        for s in d.get("spikes", []):
+            self.objects.append(EditorObject("spike",
+                {"x": s[0], "y": s[1], "w": s[2], "h": s[3]}))
+        for m in d.get("magnet_anchors", []):
+            self.objects.append(EditorObject("magnet",
+                {"x": m[0], "y": m[1], "r": m[2] if len(m) > 2 else 120}))
+        for sp in d.get("slingshot_pairs", []):
+            self.objects.append(EditorObject("slingshot",
+                {"ax": sp[0][0], "ay": sp[0][1], "bx": sp[1][0], "by": sp[1][1]}))
+        self.input_name.text = d.get("name", "Custom Level")
+        st = d.get("star_times", [5, 10, 20])
+        self.input_star3.text = str(st[0])
+        self.input_star2.text = str(st[1])
+        self.input_star1.text = str(st[2])
+        self.input_width.text = str(d.get("width", 720))
+        self.input_height.text = str(d.get("height", 1280))
+        self.level_width = int(d.get("width", 720))
+        self.level_height = int(d.get("height", 1280))
+        # Reset camera to fit the level
+        self.cam_x = 0.0; self.cam_y = 0.0; self.zoom = 1.0
+        self.toast_msg = f"Loaded: {d.get('name', 'level')}"; self.toast_timer = 2.0
+
+    def _new_level(self):
+        self.objects.clear(); self.rect_start = None; self._slingshot_first = None
+        self.editing_index = -1
+        self.input_name.text = "My Level"
+        self.input_star3.text = "5"; self.input_star2.text = "10"; self.input_star1.text = "20"
+        self.input_width.text = "720"; self.input_height.text = "1280"
+        self.level_width = 720; self.level_height = 1280
+        self.cam_x = 0.0; self.cam_y = 0.0; self.zoom = 1.0
+        self.toast_msg = "New blank level"; self.toast_timer = 1.5
+
+    def _delete_current(self):
+        if self.editing_index < 0 or self.editing_index >= len(self.custom_levels):
+            self.toast_msg = "Nothing to delete"; self.toast_timer = 2.0; return
+        name = self.custom_levels[self.editing_index].get("name", "level")
+        self.custom_levels.pop(self.editing_index)
+        save_custom_levels(self.custom_levels)
+        self._new_level()
+        self.toast_msg = f"Deleted: {name}"; self.toast_timer = 2.5
+
+    # ------------------------------------------------------------------
+    # Drawing
+    # ------------------------------------------------------------------
+    def draw(self):
+        self.screen.fill(COLOR_BG)
+        self._draw_grid()
+        self._draw_objects()
+        self._draw_rect_preview()
+        self._draw_hud_info()
+        self._draw_toolbar()
+        self._draw_sidebar()
+        self._draw_toggle_btn()
+        self._draw_toast()
+        pygame.display.flip()
+
+    def _draw_grid(self):
+        cr = self._canvas_right()
+        canvas_h = HEIGHT - TOOLBAR_H
+
+        # Figure out world-space bounds visible on screen
+        w0x, w0y = self.screen_to_world(0, 0)
+        w1x, w1y = self.screen_to_world(cr, canvas_h)
+
+        step = 40
+        # Adjust grid step so it doesn't get too dense when zoomed out
+        while step * self.zoom < 20:
+            step *= 2
+        while step * self.zoom > 80:
+            step //= 2
+        step = max(10, step)
+
+        start_gx = int(w0x // step) * step
+        start_gy = int(w0y // step) * step
+
+        gx = start_gx
+        while gx <= w1x + step:
+            sx, _ = self.world_to_screen(gx, 0)
+            if 0 <= sx <= cr:
+                pygame.draw.line(self.screen, COLOR_GRID, (sx, 0), (sx, canvas_h), 1)
+            gx += step
+
+        gy = start_gy
+        while gy <= w1y + step:
+            _, sy = self.world_to_screen(0, gy)
+            if 0 <= sy <= canvas_h:
+                pygame.draw.line(self.screen, COLOR_GRID, (0, sy), (cr, sy), 1)
+            gy += step
+
+        # Draw level boundary rectangle
+        bx0, by0 = self.world_to_screen(0, 0)
+        bx1, by1 = self.world_to_screen(self.level_width, self.level_height)
+        border_rect = pygame.Rect(bx0, by0, bx1 - bx0, by1 - by0)
+        pygame.draw.rect(self.screen, (80, 100, 140), border_rect, 2)
+        # Small label
+        dim_lbl = self.tiny_font.render(
+            f"{self.level_width}x{self.level_height}", True, (80, 100, 140))
+        self.screen.blit(dim_lbl, (bx0 + 4, by0 + 2))
+
+    def _draw_objects(self):
+        z = self.zoom
+        lh = self.level_height
+        for obj in self.objects:
+            d = obj.data
+            if obj.type == "candy":
+                wy = int(lh - d["y"])
+                cx, cy = self.world_to_screen(d["x"], wy)
+                r = max(2, int(14 * z))
+                pygame.draw.circle(self.screen, COLOR_PAYLOAD, (cx, cy), r)
+                pygame.draw.circle(self.screen, (255, 100, 100),
+                                   (cx - int(3 * z), cy - int(3 * z)), max(1, int(5 * z)))
+                pygame.draw.circle(self.screen, (160, 40, 40), (cx, cy), r, max(1, int(2 * z)))
+            elif obj.type == "anchor":
+                wy = int(lh - d["y"])
+                cx, cy = self.world_to_screen(d["x"], wy)
+                r = max(2, int(7 * z))
+                pygame.draw.circle(self.screen, (130, 140, 160), (cx, cy), r)
+                pygame.draw.circle(self.screen, (80, 90, 110), (cx, cy), max(1, int(4 * z)))
+                pygame.draw.circle(self.screen, (90, 100, 120), (cx, cy), r, max(1, int(2 * z)))
+            elif obj.type == "target":
+                wy = int(lh - d["y"])
+                scx, scy = self.world_to_screen(d["x"] - d["w"] / 2, wy - d["h"] / 2)
+                sw, sh = int(d["w"] * z), int(d["h"] * z)
+                r = pygame.Rect(scx, scy, sw, sh)
+                lw = max(1, int(3 * z))
+                pygame.draw.line(self.screen, COLOR_TARGET,
+                                 (r.left, r.top), (r.left, r.bottom), lw)
+                pygame.draw.line(self.screen, COLOR_TARGET,
+                                 (r.right, r.top), (r.right, r.bottom), lw)
+                pygame.draw.line(self.screen, COLOR_TARGET,
+                                 (r.left, r.bottom), (r.right, r.bottom), lw)
+                inner = r.inflate(-max(1, int(6 * z)), -max(1, int(6 * z)))
+                if inner.w > 0 and inner.h > 0:
+                    s = pygame.Surface((inner.w, inner.h), pygame.SRCALPHA)
+                    pygame.draw.rect(s, (60, 200, 100, 20), s.get_rect(), border_radius=4)
+                    self.screen.blit(s, inner.topleft)
+            elif obj.type == "platform":
+                wy = int(lh - d["y"] - d["h"])
+                scx, scy = self.world_to_screen(d["x"], wy)
+                sw, sh = int(d["w"] * z), int(d["h"] * z)
+                r = pygame.Rect(scx, scy, max(1, sw), max(1, sh))
+                pygame.draw.rect(self.screen, COLOR_PLATFORM, r, border_radius=max(1, int(3 * z)))
+                pygame.draw.line(self.screen, (110, 120, 150),
+                                 (r.left, r.top), (r.right, r.top), max(1, int(2 * z)))
+            elif obj.type == "spike":
+                wy = int(lh - d["y"] - d["h"])
+                scx, scy = self.world_to_screen(d["x"], wy)
+                sw, sh = int(d["w"] * z), int(d["h"] * z)
+                r = pygame.Rect(scx, scy, max(1, sw), max(1, sh))
+                pygame.draw.rect(self.screen, COLOR_SPIKE, r, border_radius=max(1, int(2 * z)))
+                stripe_step = max(4, int(8 * z))
+                for sx_off in range(r.left + int(4 * z), r.right - int(4 * z), stripe_step):
+                    pygame.draw.line(self.screen, (220, 90, 90),
+                                     (sx_off, r.top + int(2 * z)),
+                                     (sx_off + int(4 * z), r.bottom - int(2 * z)), 1)
+            elif obj.type == "magnet":
+                wy = int(lh - d["y"])
+                cx, cy = self.world_to_screen(d["x"], wy)
+                mr = max(2, int(d.get("r", 120) * z))
+                # Radius circle
+                ring_surf = pygame.Surface((mr * 2 + 4, mr * 2 + 4), pygame.SRCALPHA)
+                pygame.draw.circle(ring_surf, (*COLOR_MAGNET, 40),
+                                   (mr + 2, mr + 2), mr)
+                pygame.draw.circle(ring_surf, (*COLOR_MAGNET, 100),
+                                   (mr + 2, mr + 2), mr, max(1, int(2 * z)))
+                self.screen.blit(ring_surf, (cx - mr - 2, cy - mr - 2))
+                # Core dot
+                cr = max(3, int(10 * z))
+                pygame.draw.circle(self.screen, COLOR_MAGNET, (cx, cy), cr)
+                pygame.draw.circle(self.screen, (255, 255, 255), (cx, cy), cr, max(1, int(2 * z)))
+            elif obj.type == "slingshot":
+                wy_a = int(lh - d["ay"])
+                wy_b = int(lh - d["by"])
+                ax, ay = self.world_to_screen(d["ax"], wy_a)
+                bx, by = self.world_to_screen(d["bx"], wy_b)
+                # Line between pair
+                pygame.draw.line(self.screen, COLOR_SLINGSHOT, (ax, ay), (bx, by),
+                                 max(1, int(2 * z)))
+                # Dots
+                cr = max(4, int(10 * z))
+                for (px, py) in [(ax, ay), (bx, by)]:
+                    pygame.draw.circle(self.screen, COLOR_SLINGSHOT, (px, py), cr)
+                    pygame.draw.circle(self.screen, (255, 255, 255), (px, py), cr,
+                                       max(1, int(2 * z)))
+
+    def _draw_rect_preview(self):
+        if self.rect_start:
+            mx, my = pygame.mouse.get_pos()
+            # rect_start is in world coords now
+            sx1, sy1 = self.world_to_screen(self.rect_start[0], self.rect_start[1])
+            left, top = min(sx1, mx), min(sy1, my)
+            w, h = abs(mx - sx1), abs(my - sy1)
+            c = COLOR_TARGET if self.mode == "target" else \
+                COLOR_PLATFORM if self.mode == "platform" else COLOR_SPIKE
+            pygame.draw.rect(self.screen, c, (left, top, w, h), 2)
+            # Size label in world units
+            ww = abs(mx - sx1) / self.zoom
+            wh = abs(my - sy1) / self.zoom
+            lbl = self.tiny_font.render(f"{int(ww)}x{int(wh)}", True, (150, 155, 175))
+            self.screen.blit(lbl, (left + 4, top - 16))
+        # Slingshot first-point preview
+        if self._slingshot_first is not None and self.mode == "slingshot":
+            lh = self.level_height
+            wy = int(lh - self._slingshot_first[1])
+            sx, sy = self.world_to_screen(self._slingshot_first[0], wy)
+            mx, my = pygame.mouse.get_pos()
+            pygame.draw.line(self.screen, COLOR_SLINGSHOT, (sx, sy), (mx, my), 2)
+            pygame.draw.circle(self.screen, COLOR_SLINGSHOT, (sx, sy), 6)
+            lbl = self.tiny_font.render("Click 2nd point", True, COLOR_SLINGSHOT)
+            self.screen.blit(lbl, (mx + 10, my - 10))
+
+    def _draw_hud_info(self):
+        # Tool name with visual icon
+        self.screen.blit(self.big_font.render(f"Tool: {self.mode.capitalize()}",
+                                               True, COLOR_TEXT), (15, 15))
+        # Zoom indicator
+        zoom_text = f"Zoom: {self.zoom:.0%}"
+        self.screen.blit(self.font.render(zoom_text, True, (140, 180, 220)), (15, 42))
+        # World-coord of mouse
+        mpos = pygame.mouse.get_pos()
+        wx, wy = self.screen_to_world(mpos[0], mpos[1])
+        coord_text = f"({int(wx)}, {int(pymunk_y(int(wy)))})"
+        self.screen.blit(self.tiny_font.render(coord_text, True, (120, 125, 145)), (15, 62))
+        # Instructions
+        lines = ["LClick: Place  |  RClick: Delete  |  Scroll: Zoom",
+                 "Space+Drag / MidMouse: Pan  |  0: Reset  |  Tab: Sidebar"]
+        y = 80
+        for ln in lines:
+            self.screen.blit(self.tiny_font.render(ln, True, (120, 125, 145)), (15, y))
+            y += 16
+
+    # ---- toolbar ----
+    def _draw_toolbar(self):
+        tb = pygame.Rect(0, HEIGHT - TOOLBAR_H, WIDTH, TOOLBAR_H)
+        pygame.draw.rect(self.screen, (20, 23, 32), tb)
+        pygame.draw.line(self.screen, (45, 50, 65), (0, tb.top), (WIDTH, tb.top), 2)
+
+        cfgs = {
+            "candy":     ("Candy",    COLOR_PAYLOAD),
+            "anchor":    ("Anchor",   COLOR_ANCHOR),
+            "target":    ("Target",   COLOR_TARGET),
+            "platform":  ("Platform", COLOR_PLATFORM),
+            "spike":     ("Spike",    COLOR_SPIKE),
+            "magnet":    ("Magnet",   COLOR_MAGNET),
+            "slingshot": ("Sling",    COLOR_SLINGSHOT),
+        }
+        for name, rect in self.buttons.items():
+            label_text, color = cfgs[name]
+            sel = self.mode == name
+            hov = rect.collidepoint(pygame.mouse.get_pos())
+            bg = color if sel else lerp_c((38, 42, 58), (55, 60, 80), 1.0 if hov else 0.0)
+            pygame.draw.rect(self.screen, bg, rect, border_radius=10)
+            brd = (255, 255, 255) if sel else lerp_c((60, 65, 82), (100, 105, 130), 1.0 if hov else 0.0)
+            pygame.draw.rect(self.screen, brd, rect, width=3 if sel else 1, border_radius=10)
+
+            # Draw visual icon
+            ic = (rect.centerx, rect.centery - 6)
+            if name == "candy":
+                pygame.draw.circle(self.screen, (200, 55, 55), ic, 9)
+                pygame.draw.circle(self.screen, (255, 120, 120), (ic[0] - 3, ic[1] - 3), 3)
+                pygame.draw.circle(self.screen, (150, 35, 35), ic, 9, 2)
+            elif name == "anchor":
+                pygame.draw.circle(self.screen, (120, 130, 150), ic, 7)
+                pygame.draw.circle(self.screen, (75, 85, 105), ic, 3)
+                pygame.draw.circle(self.screen, (85, 95, 115), ic, 7, 2)
+            elif name == "target":
+                tr = pygame.Rect(0, 0, 22, 14)
+                tr.center = ic
+                pygame.draw.line(self.screen, (50, 180, 90),
+                                 (tr.left, tr.top), (tr.left, tr.bottom), 2)
+                pygame.draw.line(self.screen, (50, 180, 90),
+                                 (tr.right, tr.top), (tr.right, tr.bottom), 2)
+                pygame.draw.line(self.screen, (50, 180, 90),
+                                 (tr.left, tr.bottom), (tr.right, tr.bottom), 2)
+            elif name == "platform":
+                pr = pygame.Rect(0, 0, 26, 10)
+                pr.center = ic
+                pygame.draw.rect(self.screen, (70, 75, 95), pr, border_radius=3)
+                pygame.draw.line(self.screen, (100, 110, 140),
+                                 (pr.left, pr.top), (pr.right, pr.top), 2)
+            elif name == "spike":
+                base_y = ic[1] + 5
+                for sx in range(-8, 9, 6):
+                    pts = [(ic[0] + sx, base_y),
+                           (ic[0] + sx + 3, ic[1] - 5),
+                           (ic[0] + sx + 6, base_y)]
+                    pygame.draw.polygon(self.screen, (170, 45, 45), pts)
+            elif name == "magnet":
+                pygame.draw.circle(self.screen, COLOR_MAGNET, ic, 9, 2)
+                pygame.draw.circle(self.screen, COLOR_MAGNET, ic, 4)
+            elif name == "slingshot":
+                pygame.draw.line(self.screen, COLOR_SLINGSHOT,
+                                 (ic[0] - 8, ic[1] - 6), (ic[0] + 8, ic[1] + 6), 2)
+                pygame.draw.circle(self.screen, COLOR_SLINGSHOT, (ic[0] - 8, ic[1] - 6), 4)
+                pygame.draw.circle(self.screen, COLOR_SLINGSHOT, (ic[0] + 8, ic[1] + 6), 4)
+
+            # Label below icon
+            lbl = self.tiny_font.render(label_text, True, (200, 205, 220))
+            self.screen.blit(lbl, lbl.get_rect(center=(rect.centerx, rect.bottom - 10)))
+
+        # Clear button
+        hov = self.clear_btn.collidepoint(pygame.mouse.get_pos())
+        bg = (100, 50, 50) if hov else (70, 35, 35)
+        pygame.draw.rect(self.screen, bg, self.clear_btn, border_radius=10)
+        pygame.draw.rect(self.screen, (130, 65, 65), self.clear_btn, width=1, border_radius=10)
+        self.screen.blit(self.font.render("Clear", True, COLOR_TEXT),
+                         self.font.render("Clear", True, COLOR_TEXT)
+                         .get_rect(center=self.clear_btn.center))
+
+        # Save button
+        hov = self.save_btn.collidepoint(pygame.mouse.get_pos())
+        bg = (45, 100, 50) if hov else (35, 70, 38)
+        pygame.draw.rect(self.screen, bg, self.save_btn, border_radius=10)
+        pygame.draw.rect(self.screen, (65, 135, 70), self.save_btn, width=1, border_radius=10)
+        self.screen.blit(self.font.render("Save", True, COLOR_TEXT),
+                         self.font.render("Save", True, COLOR_TEXT)
+                         .get_rect(center=self.save_btn.center))
+
+    # ---- sidebar ----
+    def _draw_sidebar(self):
+        if not self.sidebar_open and self._sidebar_x >= SIDEBAR_W - 1:
+            return  # fully closed, skip drawing
+
+        # Animate slide
+        anim_offset = int(self._sidebar_x)
+        px = WIDTH - SIDEBAR_W + anim_offset
+
+        # Panel background
+        panel = pygame.Rect(px, 0, SIDEBAR_W, HEIGHT - TOOLBAR_H)
+        pygame.draw.rect(self.screen, COLOR_SIDEBAR_BG, panel)
+        pygame.draw.line(self.screen, (45, 50, 65), (px, 0), (px, HEIGHT - TOOLBAR_H), 2)
+
+        # ---- content (only draw if mostly visible) ----
+        if anim_offset > SIDEBAR_W * 0.6:
+            return
+
+        # Update input positions to track sidebar animation
+        inp_base_x = px + 15
+        self.input_name.rect.x = inp_base_x
+        self.input_star3.rect.x = inp_base_x
+        self.input_star2.rect.x = inp_base_x + 72
+        self.input_star1.rect.x = inp_base_x + 144
+        self.input_width.rect.x = inp_base_x
+        self.input_height.rect.x = inp_base_x + 110
+        self.new_btn.x = inp_base_x
+        self.del_btn.x = inp_base_x + 110
+
+        # Title
+        self.screen.blit(self.big_font.render("Level Settings", True, COLOR_TEXT),
+                         (px + 12, 12))
+
+        # Editing indicator
+        if self.editing_index >= 0:
+            tag = f"Editing #{self.editing_index + 1}"
+            tag_c = COLOR_ACCENT
+        else:
+            tag = "New Level"
+            tag_c = COLOR_SUCCESS
+        self.screen.blit(self.font.render(tag, True, tag_c), (px + 12, 45))
+
+        # Object counts with visual icons
+        counts = {"candy": 0, "anchor": 0, "target": 0, "platform": 0,
+                  "spike": 0, "magnet": 0, "slingshot": 0}
+        for o in self.objects:
+            if o.type in counts:
+                counts[o.type] += 1
+        icon_colors = {"candy": COLOR_PAYLOAD, "anchor": COLOR_ANCHOR,
+                        "target": COLOR_TARGET, "platform": COLOR_PLATFORM,
+                        "spike": COLOR_SPIKE, "magnet": COLOR_MAGNET,
+                        "slingshot": COLOR_SLINGSHOT}
+        y = 75
+        for t, c in counts.items():
+            # Small colored dot
+            pygame.draw.circle(self.screen, icon_colors[t], (px + 20, y + 7), 5)
+            self.screen.blit(self.font.render(f"{t.capitalize()}: {c}", True,
+                                               (140, 145, 165)), (px + 32, y))
+            y += 20
+
+        # Text inputs
+        for ti in self.text_inputs:
+            ti.draw(self.screen)
+
+        # New / Delete buttons
+        hov_n = self.new_btn.collidepoint(pygame.mouse.get_pos())
+        pygame.draw.rect(self.screen,
+                         (55, 110, 65) if hov_n else (40, 80, 48),
+                         self.new_btn, border_radius=6)
+        pygame.draw.rect(self.screen, (65, 130, 75), self.new_btn, width=1, border_radius=6)
+        self.screen.blit(self.font.render("+ New", True, COLOR_TEXT),
+                         self.font.render("+ New", True, COLOR_TEXT)
+                         .get_rect(center=self.new_btn.center))
+
+        hov_d = self.del_btn.collidepoint(pygame.mouse.get_pos())
+        pygame.draw.rect(self.screen,
+                         (110, 50, 50) if hov_d else (80, 35, 35),
+                         self.del_btn, border_radius=6)
+        pygame.draw.rect(self.screen, (130, 60, 60), self.del_btn, width=1, border_radius=6)
+        self.screen.blit(self.font.render("Delete", True, COLOR_TEXT),
+                         self.font.render("Delete", True, COLOR_TEXT)
+                         .get_rect(center=self.del_btn.center))
+
+        # Level list
+        list_y = 410
+        self.screen.blit(self.font.render("Custom Levels", True, (165, 170, 190)),
+                         (px + 12, list_y))
+        line_w = SIDEBAR_W - 30
+        for i in range(int(line_w)):
+            a = max(0, 255 - i * 3)
+            pygame.draw.line(self.screen, lerp_c(COLOR_ACCENT, COLOR_SIDEBAR_BG, i / line_w),
+                             (px + 12 + i, list_y + 20), (px + 12 + i, list_y + 21))
+
+        self.load_buttons.clear()
+        clip = pygame.Rect(px, list_y + 25, SIDEBAR_W, HEIGHT - TOOLBAR_H - list_y - 30)
+        self.screen.set_clip(clip)
+
+        y = list_y + 28 + self.side_scroll_y
+        for i, lvl in enumerate(self.custom_levels):
+            r = pygame.Rect(px + 8, y, SIDEBAR_W - 20, 30)
+            self.load_buttons.append((r, i))
+            sel = (i == self.editing_index)
+            hov = r.collidepoint(pygame.mouse.get_pos())
+            bg = (55, 50, 80) if sel else (38, 42, 55) if hov else (28, 32, 44)
+            pygame.draw.rect(self.screen, bg, r, border_radius=6)
+            if sel:
+                pygame.draw.rect(self.screen, COLOR_ACCENT, r, width=2, border_radius=6)
+            name = lvl.get("name", f"Level {i + 1}")
+            if len(name) > 20:
+                name = name[:18] + ".."
+            self.screen.blit(self.font.render(f"{i + 1}. {name}", True, COLOR_TEXT),
+                             (r.x + 10, r.y + 6))
+            # Mini stars
+            st = lvl.get("star_times", [5, 10, 20])
+            for si in range(3):
+                draw_star(self.screen, r.right - 40 + si * 12, r.centery, 5, True)
+            y += 35
+
+        self.screen.set_clip(None)
+
+        if not self.custom_levels:
+            self.screen.blit(self.font.render("(none yet)", True, (70, 75, 90)),
+                             (px + 12, list_y + 30))
+
+    def _draw_toggle_btn(self):
+        """Draw the sidebar toggle tab on the edge."""
+        cr = self._canvas_right()
+        self._toggle_btn = pygame.Rect(cr - 14, HEIGHT // 2 - 30, 28, 60)
+        hov = self._toggle_btn.collidepoint(pygame.mouse.get_pos())
+        bg = (55, 60, 80) if hov else (38, 42, 58)
+        pygame.draw.rect(self.screen, bg, self._toggle_btn, border_radius=6)
+        pygame.draw.rect(self.screen, (80, 85, 110), self._toggle_btn, width=1, border_radius=6)
+        # Arrow
+        arrow = ">" if self.sidebar_open else "<"
+        arr_s = self.font.render(arrow, True, COLOR_TEXT)
+        self.screen.blit(arr_s, arr_s.get_rect(center=self._toggle_btn.center))
+
+    def _draw_toast(self):
+        if self.toast_timer <= 0:
+            return
+        surf = self.big_font.render(self.toast_msg, True, COLOR_SUCCESS)
+        r = surf.get_rect(center=(self._canvas_right() // 2, 40))
+        bg = r.inflate(24, 12)
+        pygame.draw.rect(self.screen, (15, 18, 28), bg, border_radius=10)
+        pygame.draw.rect(self.screen, COLOR_SUCCESS, bg, width=2, border_radius=10)
+        self.screen.blit(surf, r)
+
+    # ------------------------------------------------------------------
+    # Main loop
+    # ------------------------------------------------------------------
+    def run(self):
+        while True:
+            dt = self.clock.tick(60) / 1000.0
+            if self.toast_timer > 0:
+                self.toast_timer -= dt
+                if self.toast_timer <= 0:
+                    self.toast_msg = ""
+            for ti in self.text_inputs:
+                ti.update(dt)
+            # Animate sidebar
+            self._sidebar_x += (self._sidebar_target - self._sidebar_x) * min(1.0, dt * 12)
+            self.handle_events()
+            self.draw()
+
+
+if __name__ == "__main__":
+    LevelEditor().run()

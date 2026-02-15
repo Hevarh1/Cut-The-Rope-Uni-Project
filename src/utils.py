@@ -8,14 +8,22 @@ import pygame
 from .config import PYMUNK_HEIGHT
 
 
-def pymunk_to_pygame(pos: Tuple[float, float]) -> Tuple[int, int]:
-    """Convert pymunk coordinates (bottom-left origin) to pygame (top-left origin)."""
-    return int(pos[0]), int(PYMUNK_HEIGHT - pos[1])
+def pymunk_to_pygame(pos: Tuple[float, float], level_height: int = None) -> Tuple[int, int]:
+    """Convert pymunk coordinates (bottom-left origin) to pygame (top-left origin).
+    
+    If *level_height* is given it is used as the Y-axis size instead of
+    the default PYMUNK_HEIGHT (720).  This is essential for custom-sized
+    levels so that objects placed at e.g. Y=1200 in a 1500-tall level
+    end up at the correct pygame pixel row.
+    """
+    h = level_height if level_height is not None else PYMUNK_HEIGHT
+    return int(pos[0]), int(h - pos[1])
 
 
-def pygame_to_pymunk(pos: Tuple[int, int]) -> Tuple[float, float]:
+def pygame_to_pymunk(pos: Tuple[int, int], level_height: int = None) -> Tuple[float, float]:
     """Convert pygame coordinates to pymunk coordinates."""
-    return float(pos[0]), float(PYMUNK_HEIGHT - pos[1])
+    h = level_height if level_height is not None else PYMUNK_HEIGHT
+    return float(pos[0]), float(h - pos[1])
 
 
 def line_segment_intersection(p1, p2, p3, p4) -> bool:
@@ -110,3 +118,50 @@ def normalize_angle(angle: float) -> float:
     while angle >= 2 * math.pi:
         angle -= 2 * math.pi
     return angle
+
+
+def catmull_rom_spline(points: list, num_interpolated: int = 8) -> list:
+    """Generate smooth curve points using Catmull-Rom spline interpolation.
+    
+    Takes a list of control points and returns a much smoother list of points.
+    """
+    if len(points) < 2:
+        return points
+    if len(points) == 2:
+        return points
+    
+    result = []
+    
+    # Duplicate first and last points for endpoint handling
+    extended = [points[0]] + list(points) + [points[-1]]
+    
+    for i in range(1, len(extended) - 2):
+        p0 = extended[i - 1]
+        p1 = extended[i]
+        p2 = extended[i + 1]
+        p3 = extended[i + 2]
+        
+        for t_step in range(num_interpolated):
+            t = t_step / num_interpolated
+            t2 = t * t
+            t3 = t2 * t
+            
+            # Catmull-Rom matrix multiplication
+            x = 0.5 * (
+                (2 * p1[0]) +
+                (-p0[0] + p2[0]) * t +
+                (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+                (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3
+            )
+            y = 0.5 * (
+                (2 * p1[1]) +
+                (-p0[1] + p2[1]) * t +
+                (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+                (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3
+            )
+            result.append((int(x), int(y)))
+    
+    # Add the last point
+    result.append(points[-1])
+    
+    return result

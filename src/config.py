@@ -1,136 +1,168 @@
 """
 Configuration and constants for Cut The Rope game.
-All game settings, colors, and physics constants are defined here.
+
+Mechanics (per design docs):
+  - Rope            (PinJoint chain)
+  - Static Anchor   (standard hook)
+  - Automatic Anchor (magnet - auto-attach)
+  - Slider Anchor   (mouse-drag along a track)
+  - Winch Anchor    (keyboard extend/retract rope length)
+  - Teleportation   (magic hat portals)
+  - Spiders         (crawl rope toward candy - lose)
+  - Spikes          (instant death)
+  - Letter-key cut  (A/B/C cuts labelled rope)
 """
 
-# =============================================================================
-# WINDOW SETTINGS
-# =============================================================================
-WIDTH = 1280
-HEIGHT = 720
+# Virtual canvas
+WIDTH = 720
+HEIGHT = 1280
 FPS = 60
-PYMUNK_HEIGHT = 720
+PYMUNK_HEIGHT = 1280
 GAME_TITLE = "Cut The Rope"
 
-# =============================================================================
-# PHYSICS SETTINGS
-# =============================================================================
-GRAVITY = -900  # Negative Y = downward in pymunk
-PHYSICS_STEPS = 4  # Sub-steps per frame for smoother physics
+# Physics
+GRAVITY = -900
+PHYSICS_STEPS = 20
 
-# Payload
-PAYLOAD_MASS = 15
-PAYLOAD_RADIUS = 20
-PAYLOAD_FRICTION = 0.7
-PAYLOAD_ELASTICITY = 0.4
-
-# Rope
-ROPE_SEGMENT_LENGTH = 40  # Pixels between segments
-ROPE_SEGMENT_MASS = 0.2
-ROPE_SEGMENT_MOMENT = 0.3
-ROPE_DAMPING = 5  # Higher = less oscillation
-ROPE_ERROR_BIAS = 0.2  # Higher = faster correction
-ROPE_WIDTH = 3
+# Rope (PinJoint)
+ROPE_SEGMENT_LENGTH = 35
+ROPE_SEGMENT_MASS = 0.8
+ROPE_SEGMENT_MOMENT = 0.5
+ROPE_DAMPING = 80
+ROPE_ERROR_BIAS = 0.2
+ROPE_WIDTH = 2
 
 # Platform
-PLATFORM_FRICTION = 0.7
-PLATFORM_ELASTICITY = 0.5
+PLATFORM_FRICTION = 0.8
+PLATFORM_ELASTICITY = 0.2
 
 # Target
 TARGET_WALL_FRICTION = 0.6
-TARGET_WALL_ELASTICITY = 0.3
-TARGET_FLOOR_FRICTION = 0.7
-TARGET_FLOOR_ELASTICITY = 0.2
-TARGET_SETTLE_TIME = 2.0  # Seconds to win
-TARGET_SETTLE_VELOCITY = 80  # Max velocity to count as "settled"
+TARGET_WALL_ELASTICITY = 0.25
+TARGET_FLOOR_FRICTION = 0.8
+TARGET_FLOOR_ELASTICITY = 0.15
+TARGET_SETTLE_TIME = 2.0
+TARGET_SETTLE_VELOCITY = 80
 
 # Spikes
 SPIKE_FRICTION = 0.3
 SPIKE_ELASTICITY = 0.1
 
-# =============================================================================
-# COLOR PALETTE - Professional and smooth colors
-# =============================================================================
+# Magnet Anchor
+MAGNET_RADIUS = 90
+MAGNET_COLOR = (100, 180, 255)
+MAGNET_COLOR_ACTIVE = (60, 220, 255)
+MAGNET_PULSE_SPEED = 3.0
 
-# Background
+# Slider Anchor (mouse-drag along track)
+SLIDER_COLOR = (180, 220, 100)
+SLIDER_COLOR_ACTIVE = (210, 255, 120)
+SLIDER_HANDLE_RADIUS = 12
+SLIDER_TRACK_WIDTH = 3
+SLIDER_SNAP_DIST = 30
+
+# Winch Anchor (keyboard extend/retract)
+WINCH_COLOR = (255, 180, 60)
+WINCH_COLOR_ACTIVE = (255, 220, 100)
+WINCH_EXTEND_SPEED = 200
+WINCH_MIN_LENGTH = 80          # raised from 30 – prevents rope bunching near anchor
+WINCH_MAX_LENGTH = 400
+
+# Teleport (Magic Hats)
+TELEPORT_RADIUS = 32
+TELEPORT_COOLDOWN = 0.8
+TELEPORT_OFFSET = 50
+TELEPORT_COLOR_A = (180, 100, 255)
+TELEPORT_COLOR_B = (100, 220, 255)
+TELEPORT_PULSE_SPEED = 2.5
+
+# Spider
+SPIDER_SPEED = 60.0
+SPIDER_RADIUS = 18
+SPIDER_CATCH_DIST = 32
+SPIDER_COLOR = (30, 30, 30)
+SPIDER_COLOR_BODY = (50, 40, 50)
+SPIDER_COLOR_EYE = (255, 40, 40)
+SPIDER_LEG_COLOR = (60, 50, 60)
+SPIDER_GLOW_COLOR = (255, 60, 60)
+
+# Candy
+CANDY_MASS = 5
+CANDY_RADIUS = 14
+CANDY_FRICTION = 0.85
+CANDY_ELASTICITY = 0.2
+
+# Color Palette
 COLOR_BG = (25, 28, 40)
 COLOR_BG_GRADIENT_TOP = (35, 40, 58)
 COLOR_BG_GRADIENT_BOTTOM = (20, 23, 35)
 
-# Candy (ball)
-CANDY_MASS = 15
-CANDY_RADIUS = 20
-CANDY_FRICTION = 0.7
-CANDY_ELASTICITY = 0.4
-
 COLOR_CANDY = (255, 107, 107)
-COLOR_CANDY_HIGHLIGHT = (255, 160, 160)
-COLOR_CANDY_SHADOW = (180, 60, 60)
-COLOR_CANDY_STRIPE = (255, 80, 80)
+COLOR_CANDY_HIGHLIGHT = (255, 190, 190)
+COLOR_CANDY_SHADOW = (180, 50, 50)
+COLOR_CANDY_STRIPE = (255, 70, 70)
+COLOR_CANDY_SHINE = (255, 220, 220)
+COLOR_CANDY_DEEP = (160, 40, 40)
 
-# Anchor points
 COLOR_ANCHOR = (120, 130, 150)
 COLOR_ANCHOR_CORE = (80, 90, 110)
 COLOR_ANCHOR_GLOW = (150, 160, 180)
 COLOR_ANCHOR_RING = (90, 100, 120)
 
-# Rope
 COLOR_ROPE = (160, 120, 80)
 COLOR_ROPE_SHADOW = (100, 70, 40)
 
-# Target box
 COLOR_TARGET = (80, 220, 140)
 COLOR_TARGET_GLOW = (120, 255, 180)
 COLOR_TARGET_DARK = (50, 180, 110)
 COLOR_TARGET_INNER = (40, 150, 90)
 
-# Platforms
 COLOR_PLATFORM = (90, 100, 130)
 COLOR_PLATFORM_HIGHLIGHT = (110, 120, 150)
 COLOR_PLATFORM_SHADOW = (60, 70, 90)
 COLOR_PLATFORM_TOP = (120, 130, 160)
 
-# Spikes
 COLOR_SPIKE = (220, 70, 70)
-COLOR_SPIKE_DARK = (160, 40, 40)
-COLOR_SPIKE_TIP = (255, 100, 100)
+COLOR_SPIKE_DARK = (140, 30, 30)
+COLOR_SPIKE_TIP = (255, 130, 130)
+COLOR_SPIKE_BASE = (100, 20, 20)
+COLOR_SPIKE_GLOW = (255, 80, 80)
+COLOR_SPIKE_METAL = (180, 55, 55)
+COLOR_SPIKE_HIGHLIGHT = (255, 160, 160)
 
-# UI
 COLOR_TEXT = (240, 245, 255)
 COLOR_TEXT_SHADOW = (40, 45, 60)
 COLOR_TEXT_HIGHLIGHT = (255, 255, 255)
 COLOR_SLASH = (255, 255, 255)
 COLOR_SLASH_GLOW = (150, 200, 255)
 
-# Particles
 COLOR_PARTICLE_BOUNCE = (255, 200, 100)
 COLOR_PARTICLE_STAR = (255, 255, 200)
 COLOR_PARTICLE_SUCCESS = (120, 255, 180)
 COLOR_PARTICLE_CUT = (255, 220, 150)
 
-# UI Panels
 COLOR_PANEL_BG = (25, 28, 40, 220)
 COLOR_PANEL_BORDER = (80, 90, 120, 180)
 
-# =============================================================================
-# ANIMATION SETTINGS
-# =============================================================================
-SQUASH_RECOVERY_SPEED = 4.0  # How fast the ball recovers from squash
-SQUASH_MIN = 0.6  # Minimum squash factor
-PARTICLE_GRAVITY = 600  # Gravity for particles
-PARTICLE_FADE_SPEED = 2.5  # How fast particles fade
-GLOW_PULSE_SPEED = 0.08  # Target glow pulse speed
-STAR_COUNT = 60  # Number of background stars
+# Animation
+SQUASH_RECOVERY_SPEED = 8.0
+SQUASH_MIN = 0.82
+SQUASH_INTENSITY = 0.0008
+PARTICLE_GRAVITY = 600
+PARTICLE_FADE_SPEED = 2.5
+GLOW_PULSE_SPEED = 0.08
+STAR_COUNT = 60
 
-# Mouse trail
+BALL_ROTATION_VISUAL_SPEED = 1.0
+BALL_SHADOW_OFFSET = 3
+BALL_SHINE_OFFSET = (-0.3, -0.3)
+
 MOUSE_TRAIL_LENGTH = 15
 MOUSE_TRAIL_WIDTH = 3
 MOUSE_TRAIL_GLOW_WIDTH = 6
 
-# =============================================================================
-# FONTS
-# =============================================================================
-FONT_FAMILY = "Arial"  # More universal than Avenir
+# Fonts
+FONT_FAMILY = "Arial"
 FONT_SIZE_SMALL = 18
 FONT_SIZE_NORMAL = 24
 FONT_SIZE_LARGE = 56

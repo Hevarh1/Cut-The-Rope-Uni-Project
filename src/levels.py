@@ -1,132 +1,261 @@
 """
-Level data and management.
+Level definitions for Cut The Rope.
+
+Each level is a dict with:
+  candy       - (x, y) start position
+  target      - (x, y, radius) of Om Nom
+  anchors     - list of static anchor dicts  {x, y, letter, length}
+  magnets     - list of auto-attach anchors  {x, y, radius, letter}
+  sliders     - list of slider anchors       {x, y, track_start, track_end, letter, start_t}
+  winches     - list of winch anchors        {x, y, letter, length}
+  platforms   - list of platforms            {x1, y1, x2, y2, thickness}
+  spikes      - list of spike hazards       {x, y, width, height, direction}
+  teleports   - list of teleport pairs      {ax, ay, bx, by, angle_a, angle_b}
+  spiders     - list of spiders             {rope_index, start_t, speed}
+
+Coordinates are in Pymunk space (origin bottom-left, Y up).
+Canvas: 720 x 1280
 """
 
-from dataclasses import dataclass
-from typing import List, Tuple
+from .config import SPIDER_SPEED
 
 
-@dataclass
-class LevelData:
-    """Data structure for a single level."""
-    candy_pos: Tuple[float, float]
-    anchors: List[Tuple[float, float]]
-    target_pos: Tuple[float, float]
-    target_size: Tuple[float, float]
-    platforms: List[Tuple[float, float, float, float]]  # x, y, w, h
-    spikes: List[Tuple[float, float, float, float]]
-    name: str = ""
-    difficulty: int = 1
+def _default(d, key, val):
+    if key not in d:
+        d[key] = val
 
 
-class LevelManager:
-    """Manages game levels."""
-    
-    def __init__(self):
-        self.levels = self._create_levels()
-        self.current_index = 0
-    
-    @property
-    def current_level(self) -> LevelData:
-        return self.levels[self.current_index]
-    
-    @property
-    def level_count(self) -> int:
-        return len(self.levels)
-    
-    def select_level(self, index: int) -> bool:
-        """Select a level by index. Returns True if valid."""
-        if 0 <= index < len(self.levels):
-            self.current_index = index
-            return True
-        return False
-    
-    def next_level(self) -> bool:
-        """Go to next level. Returns True if there is one."""
-        if self.current_index < len(self.levels) - 1:
-            self.current_index += 1
-            return True
-        return False
-    
-    def _create_levels(self) -> List[LevelData]:
-        """Create all game levels."""
-        # Note: In Pymunk, Y increases UPWARD. Higher Y = higher on screen.
-        
-        levels = [
-            # Level 1: Simple drop
-            LevelData(
-                name="First Drop",
-                difficulty=1,
-                candy_pos=(640, 520),
-                anchors=[(640, 670)],
-                target_pos=(640, 120),
-                target_size=(120, 80),
-                platforms=[],
-                spikes=[]
-            ),
-            
-            # Level 2: Two ropes swing
-            LevelData(
-                name="Double Trouble",
-                difficulty=1,
-                candy_pos=(400, 470),
-                anchors=[(300, 670), (500, 670)],
-                target_pos=(900, 120),
-                target_size=(140, 80),
-                platforms=[(650, 270, 200, 20)],
-                spikes=[]
-            ),
-            
-            # Level 3: Path with obstacles
-            LevelData(
-                name="Obstacle Course",
-                difficulty=2,
-                candy_pos=(300, 520),
-                anchors=[(200, 670), (400, 640)],
-                target_pos=(950, 120),
-                target_size=(150, 80),
-                platforms=[
-                    (500, 320, 150, 20),
-                    (750, 240, 150, 20)
-                ],
-                spikes=[(600, 90, 100, 20)]
-            ),
-            
-            # Level 4: Platform puzzle
-            LevelData(
-                name="Platform Puzzle",
-                difficulty=2,
-                candy_pos=(162, 522),
-                anchors=[(242, 525), (337, 518)],
-                target_pos=(544, 223),
-                target_size=(137, 51),
-                platforms=[(242, 279, 161, 82)],
-                spikes=[]
-            ),
-            
-            # Level 5: Multi-anchor challenge
-            LevelData(
-                name="Triple Threat",
-                difficulty=3,
-                candy_pos=(190, 425),
-                anchors=[(326, 514), (333, 314), (623, 616)],
-                target_pos=(919, 158),
-                target_size=(161, 72),
-                platforms=[(522, 203, 242, 35), (1038, 221, 50, 209)],
-                spikes=[(328, 220, 171, 36), (976, 405, 37, 119)]
-            ),
-            
-            # Level 6: Expert level
-            LevelData(
-                name="The Gauntlet",
-                difficulty=4,
-                candy_pos=(236, 489),
-                anchors=[(134, 537), (353, 623), (533, 605)],
-                target_pos=(1154, 113),
-                target_size=(180, 63),
-                platforms=[(453, 233, 277, 31), (796, 175, 171, 34)],
-                spikes=[(1221, 154, 25, 253), (974, 118, 78, 27)]
-            ),
-        ]
-        
-        return levels
+# =====================================================================
+#  Campaign Levels
+# =====================================================================
+
+CAMPAIGN_LEVELS = [
+    # ------------------------------------------------------------------
+    # Level 1: Single static rope. Intro to cutting.
+    # ------------------------------------------------------------------
+    {
+        "name": "First Cut",
+        "candy": (360, 1100),
+        "target": (360, 200, 30),
+        "star_times": [3, 6, 15],
+        "anchors": [
+            {"x": 360, "y": 1200, "letter": "A", "length": 180},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 2: Two ropes. Cut the right one to swing candy into target.
+    # ------------------------------------------------------------------
+    {
+        "name": "Double Swing",
+        "candy": (360, 900),
+        "target": (200, 250, 30),
+        "star_times": [4, 8, 18],
+        "anchors": [
+            {"x": 260, "y": 1100, "letter": "A", "length": 250},
+            {"x": 460, "y": 1050, "letter": "B", "length": 200},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 3: Single rope, drop candy into target.
+    # ------------------------------------------------------------------
+    {
+        "name": "Bungee Drop",
+        "candy": (360, 1000),
+        "target": (360, 300, 30),
+        "star_times": [4, 8, 18],
+        "anchors": [
+            {"x": 360, "y": 1150, "letter": "A", "length": 150},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 4: Magnet anchor. Candy swings, gets caught, new rope forms.
+    # ------------------------------------------------------------------
+    {
+        "name": "Magnetic Pull",
+        "candy": (200, 1000),
+        "target": (550, 250, 30),
+        "star_times": [5, 10, 20],
+        "anchors": [
+            {"x": 200, "y": 1150, "letter": "A", "length": 200},
+        ],
+        "magnets": [
+            {"x": 500, "y": 800, "radius": 100, "letter": "B"},
+        ],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 5: Slider anchor. Drag hook to position candy over target.
+    # ------------------------------------------------------------------
+    {
+        "name": "Slide & Drop",
+        "candy": (300, 950),
+        "target": (500, 250, 30),
+        "star_times": [5, 10, 22],
+        "anchors": [],
+        "magnets": [],
+        "sliders": [
+            {"x": 300, "y": 1100, "track_start": (150, 1100), "track_end": (570, 1100),
+             "letter": "A", "start_t": 0.3},
+        ],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 6: Winch anchor. Extend rope to lower candy to target.
+    # ------------------------------------------------------------------
+    {
+        "name": "Winch Down",
+        "candy": (360, 1050),
+        "target": (360, 300, 30),
+        "star_times": [6, 12, 25],
+        "anchors": [],
+        "magnets": [],
+        "sliders": [],
+        "winches": [
+            {"x": 360, "y": 1200, "letter": "A", "length": 120},
+        ],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 7: Teleportation intro. Cut rope, candy falls into hat.
+    # ------------------------------------------------------------------
+    {
+        "name": "Hat Trick",
+        "candy": (200, 1000),
+        "target": (550, 300, 30),
+        "star_times": [6, 12, 25],
+        "anchors": [
+            {"x": 200, "y": 1150, "letter": "A", "length": 180},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [
+            {"ax": 200, "ay": 500, "bx": 550, "by": 600,
+             "angle_a": 1.5708, "angle_b": -1.5708},
+        ],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 8: Spider! Cut rope before spider reaches candy.
+    # ------------------------------------------------------------------
+    {
+        "name": "Spider Escape",
+        "candy": (360, 800),
+        "target": (360, 200, 30),
+        "star_times": [5, 10, 20],
+        "anchors": [
+            {"x": 360, "y": 1100, "letter": "A", "length": 350},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [],
+        "teleports": [],
+        "spiders": [
+            {"rope_index": 0, "start_t": 0.0, "speed": 55},
+        ],
+    },
+    # ------------------------------------------------------------------
+    # Level 9: Spikes hazard. Swing candy around spikes.
+    # ------------------------------------------------------------------
+    {
+        "name": "Spike Dodge",
+        "candy": (250, 950),
+        "target": (500, 250, 30),
+        "star_times": [7, 14, 28],
+        "anchors": [
+            {"x": 250, "y": 1150, "letter": "A", "length": 250},
+            {"x": 500, "y": 1100, "letter": "B", "length": 200},
+        ],
+        "magnets": [],
+        "sliders": [],
+        "winches": [],
+        "platforms": [],
+        "spikes": [
+            {"x": 360, "y": 550, "width": 120, "height": 25, "direction": "up"},
+        ],
+        "teleports": [],
+        "spiders": [],
+    },
+    # ------------------------------------------------------------------
+    # Level 10: Combo level - slider + spikes + teleport.
+    # ------------------------------------------------------------------
+    {
+        "name": "Grand Finale",
+        "candy": (180, 1000),
+        "target": (550, 200, 30),
+        "star_times": [8, 16, 30],
+        "anchors": [
+            {"x": 180, "y": 1150, "letter": "A", "length": 200},
+        ],
+        "magnets": [],
+        "sliders": [
+            {"x": 500, "y": 900, "track_start": (350, 900), "track_end": (620, 900),
+             "letter": "B", "start_t": 0.5},
+        ],
+        "winches": [],
+        "platforms": [
+            {"x1": 300, "y1": 650, "x2": 500, "y2": 650, "thickness": 8},
+        ],
+        "spikes": [
+            {"x": 400, "y": 450, "width": 80, "height": 20, "direction": "up"},
+        ],
+        "teleports": [
+            {"ax": 180, "ay": 400, "bx": 550, "by": 500,
+             "angle_a": 1.5708, "angle_b": 1.5708},
+        ],
+        "spiders": [],
+    },
+]
+
+
+def get_level(index: int) -> dict:
+    """Return level dict by 0-based index, with defaults filled in."""
+    if index < 0 or index >= len(CAMPAIGN_LEVELS):
+        return None
+    lvl = dict(CAMPAIGN_LEVELS[index])
+    for key in ("anchors", "magnets", "sliders", "winches",
+                "platforms", "spikes", "teleports", "spiders"):
+        _default(lvl, key, [])
+    _default(lvl, "name", f"Level {index + 1}")
+    return lvl
+
+
+def total_levels() -> int:
+    return len(CAMPAIGN_LEVELS)

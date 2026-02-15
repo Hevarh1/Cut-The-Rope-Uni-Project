@@ -1,0 +1,1457 @@
+#!/usr/bin/env python3
+"""
+Cut The Rope - Level Editor (v5 - Full Rewrite)
+
+Fullscreen, intuitive editor with all tools visible at once.
+Saves to data/custom_levels.json in game-compatible format.
+
+Controls:
+  Left Click   - place entity / select entity
+  Right Click  - delete entity under cursor
+  Mouse Drag   - move selected entity (in select mode)
+  Scroll       - zoom canvas
+  Middle Drag  - pan canvas
+  R            - reset zoom / pan
+  ESC          - quit
+"""
+
+import sys
+import os
+import json
+import math
+import pygame
+from typing import List, Tuple, Optional, Dict
+
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(_BASE_DIR, "data")
+CUSTOM_FILE = os.path.join(DATA_DIR, "custom_levels.json")
+
+GAME_W, GAME_H = 720, 1280
+
+C_BG = (15, 18, 25)
+C_PANEL = (22, 26, 38)
+C_PANEL_BORDER = (45, 50, 65)
+C_CANVAS_BG = (20, 24, 32)
+C_GRID = (30, 36, 48)
+C_GRID_MAJOR = (40, 48, 62)
+C_TEXT = (220, 225, 240)
+C_TEXT_DIM = (130, 135, 155)
+C_ACCENT = (100, 140, 255)
+C_HOVER = (70, 90, 140)
+C_SELECTED = (120, 160, 255)
+C_CANDY = (230, 60, 60)
+C_ANCHOR = (100, 110, 140)
+C_MAGNET = (100, 180, 255)
+C_SLIDER = (180, 130, 255)
+C_WINCH = (255, 180, 60)
+C_TARGET = (60, 200, 100)
+C_PLATFORM = (90, 95, 120)
+C_SPIKE = (200, 50, 50)
+C_TELEPORT = (180, 100, 255)
+C_SPIDER = (60, 50, 60)
+C_SUCCESS = (80, 220, 120)
+C_DANGER = (220, 80, 80)
+C_STAR_FILL = (255, 220, 50)
+C_STAR_EMPTY = (60, 65, 80)
+
+ENTITY_TYPES = [
+    ("select",   "Select",    (180, 180, 200), "S"),
+    ("candy",    "Candy",     C_CANDY,         "C"),
+    ("target",   "Target",    C_TARGET,        "T"),
+    ("anchor",   "Anchor",    C_ANCHOR,        "A"),
+    ("magnet",   "Magnet",    C_MAGNET,        "M"),
+    ("slider",   "Slider",    C_SLIDER,        "L"),
+    ("winch",    "Winch",     C_WINCH,         "W"),
+    ("platform", "Platform",  C_PLATFORM,      "P"),
+    ("spike",    "Spike",     C_SPIKE,         "K"),
+    ("teleport", "Teleport",  C_TELEPORT,      "O"),
+    ("spider",   "Spider",    C_SPIDER,        "D"),
+]
+
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def _ensure_data():
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def load_custom_levels() -> list:
+    if os.path.exists(CUSTOM_FILE):
+        try:
+            with open(CUSTOM_FILE, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return []
+    return []
+
+
+def save_custom_levels(levels: list):
+    _ensure_data()
+    with open(CUSTOM_FILE, "w") as f:
+        json.dump(levels, f, indent=2)
+
+
+def pymunk_y(py_y: float) -> float:
+    return float(GAME_H - py_y)
+
+
+def to_pygame_y(pm_y: float) -> float:
+    return float(GAME_H - pm_y)
+
+
+def draw_star(surface, cx, cy, size, filled=True):
+    pts = []
+    for k in range(10):
+        angle = math.pi / 2 + k * math.pi / 5
+        r = size if k % 2 == 0 else size * 0.4
+        pts.append((cx + r * math.cos(angle), cy - r * math.sin(angle)))
+    if filled:
+        pygame.draw.polygon(surface, C_STAR_FILL, pts)
+        pygame.draw.polygon(surface, (200, 170, 30), pts, 2)
+    else:
+        pygame.draw.polygon(surface, C_STAR_EMPTY, pts)
+        pygame.draw.polygon(surface, (90, 95, 110), pts, 2)
+
+
+def clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+class TextInput:
+    def __init__(self, x, y, w, h, font, label="", default="", numeric=False):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.font = font
+        self.label = label
+        self.text = str(default)
+        self.numeric = numeric
+        self.active = False
+        self._blink = True
+        self._bt = 0.0
+
+    def handle_event(self, event) -> bool:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            was = self.active
+            self.active = self.rect.collidepoint(event.pos)
+            if self.active or was:
+                return True
+        if event.type == pygame.KEYDOWN and self.active:
+            if event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+                return True
+            elif event.key in (pygame.K_RETURN, pygame.K_TAB):
+                self.active = False
+                return True
+            else:
+                ch = event.unicode
+                if ch:
+                    if self.numeric:
+                        if ch in "0123456789.-":
+                            self.text += ch
+                    else:
+                        self.text += ch
+                    return True
+        return False
+
+    def update(self, dt):
+        self._bt += dt
+        if self._bt > 0.5:
+            self._bt = 0
+            self._blink = not self._blink
+
+    def draw(self, surface):
+        if self.label:
+            lbl = self.font.render(self.label, True, C_TEXT_DIM)
+            surface.blit(lbl, (self.rect.x, self.rect.y - 16))
+        bg = (50, 55, 72) if self.active else (38, 42, 55)
+        pygame.draw.rect(surface, bg, self.rect, border_radius=5)
+        brd = C_ACCENT if self.active else C_PANEL_BORDER
+        pygame.draw.rect(surface, brd, self.rect, width=2, border_radius=5)
+        txt = self.font.render(self.text, True, C_TEXT)
+        surface.blit(txt, (self.rect.x + 5, self.rect.y + 3))
+        if self.active and self._blink:
+            cx = self.rect.x + 7 + txt.get_width()
+            pygame.draw.line(surface, C_TEXT, (cx, self.rect.y + 4),
+                             (cx, self.rect.bottom - 4))
+
+    @property
+    def float_val(self):
+        try:
+            return float(self.text)
+        except ValueError:
+            return 0.0
+
+    @property
+    def int_val(self):
+        try:
+            return int(float(self.text))
+        except ValueError:
+            return 0
+
+
+class EditorEntity:
+    def __init__(self, etype: str, x: float, y: float, **kwargs):
+        self.type = etype
+        self.x = x
+        self.y = y
+        self.letter = kwargs.get("letter", "A")
+        self.length = kwargs.get("length", 180)
+        self.is_elastic = kwargs.get("is_elastic", False)
+        self.radius = kwargs.get("radius", 30)
+        self.x2 = kwargs.get("x2", x + 120)
+        self.y2 = kwargs.get("y2", y)
+        self.thickness = kwargs.get("thickness", 8)
+        self.width = kwargs.get("width", 80)
+        self.height = kwargs.get("height", 20)
+        self.direction = kwargs.get("direction", "up")
+        self.track_x1 = kwargs.get("track_x1", x - 100)
+        self.track_y1 = kwargs.get("track_y1", y)
+        self.track_x2 = kwargs.get("track_x2", x + 100)
+        self.track_y2 = kwargs.get("track_y2", y)
+        self.start_t = kwargs.get("start_t", 0.5)
+        self.bx = kwargs.get("bx", x + 200)
+        self.by = kwargs.get("by", y)
+        self.angle_a = kwargs.get("angle_a", 0)
+        self.angle_b = kwargs.get("angle_b", 0)
+        self.rope_index = kwargs.get("rope_index", 0)
+        self.speed = kwargs.get("speed", 55)
+
+    def rope_end_pos(self) -> Tuple[float, float]:
+        """For anchor/winch: the (x, y) of the rope-end handle."""
+        return (self.x, self.y + self.length)
+
+    def hit_test(self, mx, my, zoom=1.0) -> bool:
+        r = max(14, 18 / zoom)
+        if self.type == "platform":
+            dx = self.x2 - self.x
+            dy = self.y2 - self.y
+            length = math.hypot(dx, dy)
+            if length < 1:
+                return math.hypot(mx - self.x, my - self.y) < r
+            t = max(0, min(1, ((mx - self.x) * dx + (my - self.y) * dy) / (length * length)))
+            px = self.x + t * dx
+            py = self.y + t * dy
+            return math.hypot(mx - px, my - py) < r
+        elif self.type == "teleport":
+            return (math.hypot(mx - self.x, my - self.y) < r or
+                    math.hypot(mx - self.bx, my - self.by) < r)
+        elif self.type == "spike":
+            hw = self.width / 2
+            hh = self.height / 2
+            return abs(mx - self.x) < hw + 5 and abs(my - self.y) < hh + 5
+        elif self.type in ("anchor", "winch"):
+            ex, ey = self.rope_end_pos()
+            return math.hypot(mx - self.x, my - self.y) < r or math.hypot(mx - ex, my - ey) < r
+        else:
+            return math.hypot(mx - self.x, my - self.y) < r
+
+    def hit_rope_handle(self, mx, my, zoom=1.0) -> bool:
+        """Check if mouse is near the rope-end drag handle (anchor/winch)."""
+        if self.type not in ("anchor", "winch"):
+            return False
+        ex, ey = self.rope_end_pos()
+        return math.hypot(mx - ex, my - ey) < max(12, 16 / zoom)
+
+    def to_game_dict(self):
+        if self.type in ("candy", "target"):
+            return None
+        elif self.type == "anchor":
+            return {"x": round(self.x), "y": round(pymunk_y(self.y)),
+                    "letter": self.letter, "length": round(self.length),
+                    "is_elastic": self.is_elastic}
+        elif self.type == "magnet":
+            return {"x": round(self.x), "y": round(pymunk_y(self.y)),
+                    "radius": round(self.radius), "letter": self.letter}
+        elif self.type == "slider":
+            return {"x": round(self.x), "y": round(pymunk_y(self.y)),
+                    "track_start": (round(self.track_x1), round(pymunk_y(self.track_y1))),
+                    "track_end": (round(self.track_x2), round(pymunk_y(self.track_y2))),
+                    "letter": self.letter, "start_t": round(self.start_t, 2)}
+        elif self.type == "winch":
+            return {"x": round(self.x), "y": round(pymunk_y(self.y)),
+                    "letter": self.letter, "length": round(self.length)}
+        elif self.type == "platform":
+            return {"x1": round(self.x), "y1": round(pymunk_y(self.y)),
+                    "x2": round(self.x2), "y2": round(pymunk_y(self.y2)),
+                    "thickness": round(self.thickness)}
+        elif self.type == "spike":
+            return {"x": round(self.x), "y": round(pymunk_y(self.y)),
+                    "width": round(self.width), "height": round(self.height),
+                    "direction": self.direction}
+        elif self.type == "teleport":
+            return {"ax": round(self.x), "ay": round(pymunk_y(self.y)),
+                    "bx": round(self.bx), "by": round(pymunk_y(self.by)),
+                    "angle_a": self.angle_a, "angle_b": self.angle_b}
+        elif self.type == "spider":
+            return {"rope_index": self.rope_index,
+                    "start_t": round(self.start_t, 2),
+                    "speed": round(self.speed)}
+        return None
+
+
+class LevelEditor:
+    LEFT_W = 160
+    RIGHT_W = 240
+
+    def __init__(self):
+        pygame.init()
+        info = pygame.display.Info()
+        self.win_w = info.current_w
+        self.win_h = info.current_h
+        self.screen = pygame.display.set_mode((self.win_w, self.win_h), pygame.FULLSCREEN)
+        pygame.display.set_caption("Cut The Rope - Level Editor")
+        self.clock = pygame.time.Clock()
+
+        self.font = pygame.font.SysFont("Arial", 16)
+        self.font_sm = pygame.font.SysFont("Arial", 13)
+        self.font_md = pygame.font.SysFont("Arial", 18, bold=True)
+        self.font_lg = pygame.font.SysFont("Arial", 22, bold=True)
+
+        self.mode = "select"
+        self.entities: List[EditorEntity] = []
+        self.selected_idx = -1
+        self.custom_levels = load_custom_levels()
+        self.editing_level_idx = -1
+
+        self.cam_x = 0.0
+        self.cam_y = 0.0
+        self.zoom = 1.0
+        self._panning = False
+        self._pan_last = None
+
+        self._dragging = False
+        self._drag_offset = (0, 0)
+        self._drag_which = None
+
+        self._place_step = 0
+        self._place_entity = None
+
+        self.toast_msg = ""
+        self.toast_timer = 0.0
+
+        self._prop_inputs: List[TextInput] = []
+
+        rx = self.win_w - self.RIGHT_W + 15
+        iw = 55
+        self.inp_star3 = TextInput(rx, 0, iw, 24, self.font, "3-star", "5", numeric=True)
+        self.inp_star2 = TextInput(rx + 70, 0, iw, 24, self.font, "2-star", "10", numeric=True)
+        self.inp_star1 = TextInput(rx + 140, 0, iw, 24, self.font, "1-star", "20", numeric=True)
+        self.inp_name = TextInput(rx, 0, self.RIGHT_W - 30, 24, self.font, "Level Name", "My Level")
+        self._star_inputs = [self.inp_star3, self.inp_star2, self.inp_star1, self.inp_name]
+
+        self._saved_scroll = 0
+        self._saved_btn_rects: List[Tuple[pygame.Rect, int]] = []
+        self._saved_del_rects: List[Tuple[pygame.Rect, int]] = []
+        self._spider_rope_btns: List[Tuple[pygame.Rect, int]] = []
+        self._tp_angle_btns: List[Tuple[pygame.Rect, str]] = []  # (rect, "a_cw"/"a_ccw"/"b_cw"/"b_ccw")
+
+        self._reset_camera()
+
+    def _reset_camera(self):
+        cw, ch = self._canvas_size()
+        sx = cw / GAME_W
+        sy = ch / GAME_H
+        self.zoom = min(sx, sy) * 0.9
+        self.cam_x = -(cw / self.zoom - GAME_W) / 2
+        self.cam_y = -(ch / self.zoom - GAME_H) / 2
+
+    def _canvas_rect(self) -> pygame.Rect:
+        return pygame.Rect(self.LEFT_W, 0, self.win_w - self.LEFT_W - self.RIGHT_W, self.win_h)
+
+    def _canvas_size(self) -> Tuple[int, int]:
+        r = self._canvas_rect()
+        return r.width, r.height
+
+    def screen_to_world(self, sx, sy) -> Tuple[float, float]:
+        cr = self._canvas_rect()
+        wx = (sx - cr.x) / self.zoom + self.cam_x
+        wy = (sy - cr.y) / self.zoom + self.cam_y
+        return wx, wy
+
+    def world_to_screen(self, wx, wy) -> Tuple[int, int]:
+        cr = self._canvas_rect()
+        sx = int((wx - self.cam_x) * self.zoom) + cr.x
+        sy = int((wy - self.cam_y) * self.zoom) + cr.y
+        return sx, sy
+
+    def _next_letter(self) -> str:
+        used = set()
+        for e in self.entities:
+            if e.type in ("anchor", "magnet", "slider", "winch"):
+                used.add(e.letter)
+        for ch in LETTERS:
+            if ch not in used:
+                return ch
+        return "Z"
+
+    def _rope_count(self) -> int:
+        return sum(1 for e in self.entities if e.type in ("anchor", "magnet", "slider", "winch"))
+
+    def _get_ropes(self) -> List[Tuple[int, str, str]]:
+        """Return list of (rope_index, letter, type_name) for all rope-creating entities."""
+        ropes = []
+        for e in self.entities:
+            if e.type in ("anchor", "magnet", "slider", "winch"):
+                ropes.append((len(ropes), e.letter, e.type.title()))
+        return ropes
+
+    def _rope_letter_for_index(self, idx: int) -> str:
+        """Return the rope letter for a given rope index, or '?' if invalid."""
+        ropes = self._get_ropes()
+        if 0 <= idx < len(ropes):
+            return ropes[idx][1]
+        return "?"
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+
+            consumed = False
+            for inp in self._star_inputs:
+                if inp.handle_event(event):
+                    consumed = True
+            for inp in self._prop_inputs:
+                if inp.handle_event(event):
+                    consumed = True
+            if consumed:
+                continue
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return False
+                if event.key == pygame.K_r:
+                    self._reset_camera()
+                for etype, _, _, shortcut in ENTITY_TYPES:
+                    if event.unicode.upper() == shortcut:
+                        self.mode = etype
+                        self._place_step = 0
+                        self._place_entity = None
+                        break
+                if event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
+                    if 0 <= self.selected_idx < len(self.entities):
+                        self.entities.pop(self.selected_idx)
+                        self.selected_idx = -1
+                        self._build_prop_inputs()
+
+            cr = self._canvas_rect()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+
+                if cr.collidepoint(mx, my):
+                    wx, wy = self.screen_to_world(mx, my)
+
+                    if event.button == 2:
+                        self._panning = True
+                        self._pan_last = (mx, my)
+                    elif event.button == 3:
+                        for i in range(len(self.entities) - 1, -1, -1):
+                            if self.entities[i].hit_test(wx, wy, self.zoom):
+                                self.entities.pop(i)
+                                if self.selected_idx == i:
+                                    self.selected_idx = -1
+                                elif self.selected_idx > i:
+                                    self.selected_idx -= 1
+                                self._build_prop_inputs()
+                                break
+                    elif event.button == 1:
+                        if self.mode == "select":
+                            hit = -1
+                            for i in range(len(self.entities) - 1, -1, -1):
+                                if self.entities[i].hit_test(wx, wy, self.zoom):
+                                    hit = i
+                                    break
+                            if hit >= 0:
+                                self.selected_idx = hit
+                                self._dragging = True
+                                e = self.entities[hit]
+                                if e.type in ("anchor", "winch") and e.hit_rope_handle(wx, wy, self.zoom):
+                                    self._drag_which = "rope_handle"
+                                    self._drag_offset = (0, 0)
+                                elif e.type == "platform" and math.hypot(wx - e.x2, wy - e.y2) < 20 / self.zoom:
+                                    self._drag_which = "end"
+                                    self._drag_offset = (e.x2 - wx, e.y2 - wy)
+                                elif e.type == "teleport" and math.hypot(wx - e.bx, wy - e.by) < 20 / self.zoom:
+                                    self._drag_which = "end"
+                                    self._drag_offset = (e.bx - wx, e.by - wy)
+                                else:
+                                    self._drag_which = "main"
+                                    self._drag_offset = (e.x - wx, e.y - wy)
+                                self._build_prop_inputs()
+                            else:
+                                self.selected_idx = -1
+                                self._build_prop_inputs()
+                        else:
+                            self._handle_place(wx, wy)
+
+                elif mx < self.LEFT_W:
+                    if event.button == 1:
+                        self._handle_left_panel_click(mx, my)
+                elif mx >= self.win_w - self.RIGHT_W:
+                    if event.button == 1:
+                        self._handle_right_panel_click(mx, my)
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 2:
+                    self._panning = False
+                    self._pan_last = None
+                if event.button == 1:
+                    self._dragging = False
+                    self._drag_which = None
+
+            elif event.type == pygame.MOUSEMOTION:
+                mx, my = event.pos
+                if self._panning and self._pan_last:
+                    dx = mx - self._pan_last[0]
+                    dy = my - self._pan_last[1]
+                    self.cam_x -= dx / self.zoom
+                    self.cam_y -= dy / self.zoom
+                    self._pan_last = (mx, my)
+                elif self._dragging and 0 <= self.selected_idx < len(self.entities):
+                    wx, wy = self.screen_to_world(mx, my)
+                    e = self.entities[self.selected_idx]
+                    if self._drag_which == "rope_handle":
+                        new_len = max(20, wy - e.y)
+                        e.length = new_len
+                        self._build_prop_inputs()
+                    elif self._drag_which == "end":
+                        if e.type == "platform":
+                            e.x2 = wx + self._drag_offset[0]
+                            e.y2 = wy + self._drag_offset[1]
+                        elif e.type == "teleport":
+                            e.bx = wx + self._drag_offset[0]
+                            e.by = wy + self._drag_offset[1]
+                    else:
+                        e.x = wx + self._drag_offset[0]
+                        e.y = wy + self._drag_offset[1]
+
+            elif event.type == pygame.MOUSEWHEEL:
+                mx, my = pygame.mouse.get_pos()
+                if cr.collidepoint(mx, my):
+                    factor = 1.15 if event.y > 0 else 1 / 1.15
+                    self.cam_x += (mx - cr.x) / self.zoom * (1 - 1 / factor)
+                    self.cam_y += (my - cr.y) / self.zoom * (1 - 1 / factor)
+                    self.zoom *= factor
+                    self.zoom = clamp(self.zoom, 0.15, 5.0)
+                elif mx >= self.win_w - self.RIGHT_W:
+                    self._saved_scroll -= event.y * 30
+
+        return True
+
+    def _handle_place(self, wx, wy):
+        etype = self.mode
+        if etype == "select":
+            return
+        if etype == "candy":
+            self.entities = [e for e in self.entities if e.type != "candy"]
+            self.entities.insert(0, EditorEntity("candy", wx, wy))
+            self._toast("Candy placed")
+        elif etype == "target":
+            self.entities = [e for e in self.entities if e.type != "target"]
+            self.entities.append(EditorEntity("target", wx, wy, radius=30))
+            self._toast("Target placed")
+        elif etype == "anchor":
+            self.entities.append(EditorEntity("anchor", wx, wy, letter=self._next_letter(), length=180))
+            self._toast("Anchor placed")
+        elif etype == "magnet":
+            self.entities.append(EditorEntity("magnet", wx, wy, letter=self._next_letter(), radius=100))
+            self._toast("Magnet placed")
+        elif etype == "slider":
+            self.entities.append(EditorEntity("slider", wx, wy, letter=self._next_letter(),
+                                              track_x1=wx - 100, track_y1=wy,
+                                              track_x2=wx + 100, track_y2=wy, start_t=0.5))
+            self._toast("Slider placed")
+        elif etype == "winch":
+            self.entities.append(EditorEntity("winch", wx, wy, letter=self._next_letter(), length=120))
+            self._toast("Winch placed")
+        elif etype == "platform":
+            if self._place_step == 0:
+                self._place_entity = EditorEntity("platform", wx, wy, x2=wx, y2=wy)
+                self._place_step = 1
+                self._toast("Click second endpoint...")
+            else:
+                self._place_entity.x2 = wx
+                self._place_entity.y2 = wy
+                self.entities.append(self._place_entity)
+                self._place_entity = None
+                self._place_step = 0
+                self._toast("Platform placed")
+        elif etype == "spike":
+            self.entities.append(EditorEntity("spike", wx, wy, width=80, height=20, direction="up"))
+            self._toast("Spike placed")
+        elif etype == "teleport":
+            if self._place_step == 0:
+                self._place_entity = EditorEntity("teleport", wx, wy, bx=wx, by=wy)
+                self._place_step = 1
+                self._toast("Click exit point...")
+            else:
+                self._place_entity.bx = wx
+                self._place_entity.by = wy
+                self.entities.append(self._place_entity)
+                self._place_entity = None
+                self._place_step = 0
+                self._toast("Teleport placed")
+        elif etype == "spider":
+            if self._rope_count() == 0:
+                self._toast("Place a rope anchor first!")
+                return
+            self.entities.append(EditorEntity("spider", wx, wy, rope_index=0, speed=55, start_t=0.0))
+            self._toast("Spider placed")
+        self.selected_idx = len(self.entities) - 1
+        self._build_prop_inputs()
+
+    def _handle_left_panel_click(self, mx, my):
+        y = 60
+        for etype, name, color, shortcut in ENTITY_TYPES:
+            btn = pygame.Rect(10, y, self.LEFT_W - 20, 36)
+            if btn.collidepoint(mx, my):
+                self.mode = etype
+                self._place_step = 0
+                self._place_entity = None
+                return
+            y += 42
+        y += 20
+        new_btn = pygame.Rect(10, y, self.LEFT_W - 20, 32)
+        if new_btn.collidepoint(mx, my):
+            self._new_level()
+            return
+        y += 40
+        save_btn = pygame.Rect(10, y, self.LEFT_W - 20, 32)
+        if save_btn.collidepoint(mx, my):
+            self._save_level()
+            return
+
+    def _handle_right_panel_click(self, mx, my):
+        # Spider rope selection buttons
+        for rect, rope_idx in self._spider_rope_btns:
+            if rect.collidepoint(mx, my):
+                if 0 <= self.selected_idx < len(self.entities):
+                    e = self.entities[self.selected_idx]
+                    if e.type == "spider":
+                        e.rope_index = rope_idx
+                        self._toast("Spider attached to rope " + self._rope_letter_for_index(rope_idx))
+                return
+        # Teleport angle buttons
+        for rect, action in self._tp_angle_btns:
+            if rect.collidepoint(mx, my):
+                if 0 <= self.selected_idx < len(self.entities):
+                    e = self.entities[self.selected_idx]
+                    if e.type == "teleport":
+                        step = math.pi / 4  # 45 degrees
+                        if action == "a_cw":
+                            e.angle_a = (e.angle_a - step) % (2 * math.pi)
+                        elif action == "a_ccw":
+                            e.angle_a = (e.angle_a + step) % (2 * math.pi)
+                        elif action == "b_cw":
+                            e.angle_b = (e.angle_b - step) % (2 * math.pi)
+                        elif action == "b_ccw":
+                            e.angle_b = (e.angle_b + step) % (2 * math.pi)
+                return
+        for rect, idx in self._saved_btn_rects:
+            if rect.collidepoint(mx, my):
+                self._load_level(idx)
+                return
+        for rect, idx in self._saved_del_rects:
+            if rect.collidepoint(mx, my):
+                self._delete_saved_level(idx)
+                return
+
+    def _build_prop_inputs(self):
+        self._prop_inputs = []
+        if not (0 <= self.selected_idx < len(self.entities)):
+            return
+        e = self.entities[self.selected_idx]
+        rx = self.win_w - self.RIGHT_W + 15
+        sw = 90
+        y = 200
+
+        if e.type in ("anchor", "magnet", "slider", "winch"):
+            self._prop_inputs.append(TextInput(rx, y, 40, 24, self.font, "Letter", e.letter))
+            y += 46
+        if e.type in ("anchor", "winch"):
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Length", str(int(e.length)), numeric=True))
+            y += 46
+        if e.type == "anchor":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Elastic (0/1)", "1" if e.is_elastic else "0", numeric=True))
+            y += 46
+        if e.type == "magnet":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Radius", str(int(e.radius)), numeric=True))
+            y += 46
+        if e.type == "target":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Radius", str(int(e.radius)), numeric=True))
+            y += 46
+        if e.type == "slider":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Start T (0-1)", str(e.start_t), numeric=True))
+            y += 46
+        if e.type == "spike":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Width", str(int(e.width)), numeric=True))
+            y += 46
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Height", str(int(e.height)), numeric=True))
+            y += 46
+            self._prop_inputs.append(TextInput(rx, y, self.RIGHT_W - 30, 24, self.font, "Direction", e.direction))
+            y += 46
+        if e.type == "platform":
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Thickness", str(int(e.thickness)), numeric=True))
+            y += 46
+        if e.type == "spider":
+            # Rope selection is handled via clickable buttons, not text input
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Speed", str(int(e.speed)), numeric=True))
+            y += 46
+            self._prop_inputs.append(TextInput(rx, y, sw, 24, self.font, "Start T (0-1)", str(e.start_t), numeric=True))
+            y += 46
+
+    def _apply_prop_inputs(self):
+        if not (0 <= self.selected_idx < len(self.entities)):
+            return
+        e = self.entities[self.selected_idx]
+        idx = 0
+        if e.type in ("anchor", "magnet", "slider", "winch") and idx < len(self._prop_inputs):
+            val = self._prop_inputs[idx].text.strip().upper()
+            if val and val[0] in LETTERS:
+                e.letter = val[0]
+            idx += 1
+        if e.type in ("anchor", "winch") and idx < len(self._prop_inputs):
+            e.length = max(20, self._prop_inputs[idx].float_val)
+            idx += 1
+        if e.type == "anchor" and idx < len(self._prop_inputs):
+            e.is_elastic = self._prop_inputs[idx].int_val != 0
+            idx += 1
+        if e.type == "magnet" and idx < len(self._prop_inputs):
+            e.radius = max(10, self._prop_inputs[idx].float_val)
+            idx += 1
+        if e.type == "target" and idx < len(self._prop_inputs):
+            e.radius = max(10, self._prop_inputs[idx].float_val)
+            idx += 1
+        if e.type == "slider" and idx < len(self._prop_inputs):
+            e.start_t = clamp(self._prop_inputs[idx].float_val, 0, 1)
+            idx += 1
+        if e.type == "spike":
+            if idx < len(self._prop_inputs):
+                e.width = max(10, self._prop_inputs[idx].float_val)
+                idx += 1
+            if idx < len(self._prop_inputs):
+                e.height = max(5, self._prop_inputs[idx].float_val)
+                idx += 1
+            if idx < len(self._prop_inputs):
+                d = self._prop_inputs[idx].text.strip().lower()
+                if d in ("up", "down", "left", "right"):
+                    e.direction = d
+                idx += 1
+        if e.type == "platform" and idx < len(self._prop_inputs):
+            e.thickness = max(2, self._prop_inputs[idx].float_val)
+            idx += 1
+        if e.type == "spider":
+            # rope_index is set via clickable buttons, not text input
+            if idx < len(self._prop_inputs):
+                e.speed = max(1, self._prop_inputs[idx].float_val)
+                idx += 1
+            if idx < len(self._prop_inputs):
+                e.start_t = clamp(self._prop_inputs[idx].float_val, 0, 1)
+                idx += 1
+
+    def _new_level(self):
+        self.entities = []
+        self.selected_idx = -1
+        self.editing_level_idx = -1
+        self.inp_name.text = "My Level"
+        self.inp_star3.text = "5"
+        self.inp_star2.text = "10"
+        self.inp_star1.text = "20"
+        self._build_prop_inputs()
+        self._reset_camera()
+        self._toast("New level")
+
+    def _build_level_dict(self) -> Optional[dict]:
+        candy = None
+        target = None
+        anchors, magnets, sliders, winches = [], [], [], []
+        platforms, spikes, teleports, spiders = [], [], [], []
+
+        for e in self.entities:
+            if e.type == "candy":
+                candy = (round(e.x), round(pymunk_y(e.y)))
+            elif e.type == "target":
+                target = (round(e.x), round(pymunk_y(e.y)), round(e.radius))
+            else:
+                d = e.to_game_dict()
+                if d:
+                    {"anchor": anchors, "magnet": magnets, "slider": sliders,
+                     "winch": winches, "platform": platforms, "spike": spikes,
+                     "teleport": teleports, "spider": spiders}[e.type].append(d)
+
+        if not candy:
+            self._toast("Place a candy first!")
+            return None
+        if not target:
+            self._toast("Place a target first!")
+            return None
+        if not anchors and not magnets and not sliders and not winches:
+            self._toast("Place at least one rope anchor!")
+            return None
+
+        return {
+            "name": self.inp_name.text.strip() or "Custom Level",
+            "candy": candy,
+            "target": target,
+            "star_times": [
+                max(1, self.inp_star3.float_val),
+                max(1, self.inp_star2.float_val),
+                max(1, self.inp_star1.float_val),
+            ],
+            "anchors": anchors,
+            "magnets": magnets,
+            "sliders": sliders,
+            "winches": winches,
+            "platforms": platforms,
+            "spikes": spikes,
+            "teleports": teleports,
+            "spiders": spiders,
+        }
+
+    def _save_level(self):
+        level = self._build_level_dict()
+        if not level:
+            return
+        self.custom_levels = load_custom_levels()
+        if 0 <= self.editing_level_idx < len(self.custom_levels):
+            self.custom_levels[self.editing_level_idx] = level
+        else:
+            self.custom_levels.append(level)
+            self.editing_level_idx = len(self.custom_levels) - 1
+        save_custom_levels(self.custom_levels)
+        self._toast("Level saved!")
+
+    def _load_level(self, idx):
+        self.custom_levels = load_custom_levels()
+        if not (0 <= idx < len(self.custom_levels)):
+            return
+        ld = self.custom_levels[idx]
+        self.editing_level_idx = idx
+        self.entities = []
+        self.selected_idx = -1
+
+        self.inp_name.text = ld.get("name", "Custom Level")
+        st = ld.get("star_times", [5, 10, 20])
+        if len(st) >= 3:
+            self.inp_star3.text = str(st[0])
+            self.inp_star2.text = str(st[1])
+            self.inp_star1.text = str(st[2])
+
+        c = ld.get("candy")
+        if c:
+            self.entities.append(EditorEntity("candy", c[0], to_pygame_y(c[1])))
+        t = ld.get("target")
+        if t:
+            self.entities.append(EditorEntity("target", t[0], to_pygame_y(t[1]),
+                                              radius=t[2] if len(t) > 2 else 30))
+        for a in ld.get("anchors", []):
+            self.entities.append(EditorEntity("anchor", a["x"], to_pygame_y(a["y"]),
+                                              letter=a.get("letter", "A"),
+                                              length=a.get("length", 180),
+                                              is_elastic=a.get("is_elastic", False)))
+        for m in ld.get("magnets", []):
+            self.entities.append(EditorEntity("magnet", m["x"], to_pygame_y(m["y"]),
+                                              letter=m.get("letter", "A"),
+                                              radius=m.get("radius", 100)))
+        for s in ld.get("sliders", []):
+            ts = s.get("track_start", (s["x"] - 100, s["y"]))
+            te = s.get("track_end", (s["x"] + 100, s["y"]))
+            self.entities.append(EditorEntity("slider", s["x"], to_pygame_y(s["y"]),
+                                              letter=s.get("letter", "A"),
+                                              track_x1=ts[0], track_y1=to_pygame_y(ts[1]),
+                                              track_x2=te[0], track_y2=to_pygame_y(te[1]),
+                                              start_t=s.get("start_t", 0.5)))
+        for w in ld.get("winches", []):
+            self.entities.append(EditorEntity("winch", w["x"], to_pygame_y(w["y"]),
+                                              letter=w.get("letter", "A"),
+                                              length=w.get("length", 120)))
+        for p in ld.get("platforms", []):
+            self.entities.append(EditorEntity("platform", p["x1"], to_pygame_y(p["y1"]),
+                                              x2=p["x2"], y2=to_pygame_y(p["y2"]),
+                                              thickness=p.get("thickness", 8)))
+        for s in ld.get("spikes", []):
+            self.entities.append(EditorEntity("spike", s["x"], to_pygame_y(s["y"]),
+                                              width=s.get("width", 80),
+                                              height=s.get("height", 20),
+                                              direction=s.get("direction", "up")))
+        for tp in ld.get("teleports", []):
+            self.entities.append(EditorEntity("teleport", tp["ax"], to_pygame_y(tp["ay"]),
+                                              bx=tp["bx"], by=to_pygame_y(tp["by"]),
+                                              angle_a=tp.get("angle_a", 0),
+                                              angle_b=tp.get("angle_b", 0)))
+        for sp in ld.get("spiders", []):
+            self.entities.append(EditorEntity("spider", GAME_W // 2, GAME_H // 2,
+                                              rope_index=sp.get("rope_index", 0),
+                                              start_t=sp.get("start_t", 0.0),
+                                              speed=sp.get("speed", 55)))
+        self._build_prop_inputs()
+        self._reset_camera()
+        self._toast("Loaded: " + ld.get("name", "level"))
+
+    def _delete_saved_level(self, idx):
+        self.custom_levels = load_custom_levels()
+        if 0 <= idx < len(self.custom_levels):
+            self.custom_levels.pop(idx)
+            save_custom_levels(self.custom_levels)
+            if self.editing_level_idx == idx:
+                self.editing_level_idx = -1
+            elif self.editing_level_idx > idx:
+                self.editing_level_idx -= 1
+            self._toast("Level deleted")
+
+    def _toast(self, msg):
+        self.toast_msg = msg
+        self.toast_timer = 2.5
+
+    def update(self, dt):
+        if self.toast_timer > 0:
+            self.toast_timer -= dt
+        for inp in self._star_inputs:
+            inp.update(dt)
+        for inp in self._prop_inputs:
+            inp.update(dt)
+        self._apply_prop_inputs()
+
+    def draw(self):
+        self.screen.fill(C_BG)
+        self._draw_left_panel()
+        self._draw_canvas()
+        self._draw_right_panel()
+        self._draw_toast()
+
+    def _draw_left_panel(self):
+        panel = pygame.Rect(0, 0, self.LEFT_W, self.win_h)
+        pygame.draw.rect(self.screen, C_PANEL, panel)
+        pygame.draw.line(self.screen, C_PANEL_BORDER,
+                         (self.LEFT_W - 1, 0), (self.LEFT_W - 1, self.win_h))
+
+        title = self.font_lg.render("TOOLS", True, C_TEXT)
+        self.screen.blit(title, (self.LEFT_W // 2 - title.get_width() // 2, 15))
+
+        y = 60
+        mx, my = pygame.mouse.get_pos()
+        for etype, name, color, shortcut in ENTITY_TYPES:
+            btn = pygame.Rect(10, y, self.LEFT_W - 20, 36)
+            hover = btn.collidepoint(mx, my)
+            active = self.mode == etype
+            if active:
+                pygame.draw.rect(self.screen, C_ACCENT, btn, border_radius=8)
+            elif hover:
+                pygame.draw.rect(self.screen, C_HOVER, btn, border_radius=8)
+            else:
+                pygame.draw.rect(self.screen, (32, 36, 48), btn, border_radius=8)
+            pygame.draw.circle(self.screen, color, (btn.x + 18, btn.centery), 7)
+            lbl = self.font.render(name + " [" + shortcut + "]", True, C_TEXT if active else C_TEXT_DIM)
+            self.screen.blit(lbl, (btn.x + 32, btn.centery - lbl.get_height() // 2))
+            y += 42
+
+        y += 10
+        pygame.draw.line(self.screen, C_PANEL_BORDER, (15, y), (self.LEFT_W - 15, y))
+        y += 15
+
+        for label, color in [("New Level", C_ACCENT), ("Save Level", C_SUCCESS)]:
+            btn = pygame.Rect(10, y, self.LEFT_W - 20, 32)
+            hover = btn.collidepoint(mx, my)
+            bc = tuple(min(255, c + 30) for c in color) if hover else color
+            pygame.draw.rect(self.screen, bc, btn, border_radius=8)
+            lbl = self.font.render(label, True, (255, 255, 255))
+            self.screen.blit(lbl, (btn.centerx - lbl.get_width() // 2,
+                                   btn.centery - lbl.get_height() // 2))
+            y += 40
+
+        y += 20
+        helps = [
+            "Left Click: Place/Select",
+            "Right Click: Delete",
+            "Middle Drag: Pan",
+            "Scroll: Zoom",
+            "R: Reset View",
+            "Del: Remove Selected",
+            "Drag handle: Resize rope",
+            "ESC: Quit",
+        ]
+        for h in helps:
+            txt = self.font_sm.render(h, True, C_TEXT_DIM)
+            self.screen.blit(txt, (15, y))
+            y += 18
+
+        y += 20
+        mode_txt = self.font_md.render("Mode: " + self.mode.title(), True, C_ACCENT)
+        self.screen.blit(mode_txt, (15, y))
+
+        if self._place_step == 1:
+            y += 24
+            hint = self.font_sm.render("Click 2nd point...", True, C_STAR_FILL)
+            self.screen.blit(hint, (15, y))
+
+    def _draw_canvas(self):
+        cr = self._canvas_rect()
+        pygame.draw.rect(self.screen, C_CANVAS_BG, cr)
+        self.screen.set_clip(cr)
+
+        grid_step = 50
+        wx0, wy0 = self.screen_to_world(cr.x, cr.y)
+        wx1, wy1 = self.screen_to_world(cr.right, cr.bottom)
+        gx0 = int(wx0 // grid_step) * grid_step
+        gy0 = int(wy0 // grid_step) * grid_step
+
+        for gx in range(gx0, int(wx1) + grid_step, grid_step):
+            sx, _ = self.world_to_screen(gx, 0)
+            c = C_GRID_MAJOR if gx % 200 == 0 else C_GRID
+            pygame.draw.line(self.screen, c, (sx, cr.y), (sx, cr.bottom))
+        for gy in range(gy0, int(wy1) + grid_step, grid_step):
+            _, sy = self.world_to_screen(0, gy)
+            c = C_GRID_MAJOR if gy % 200 == 0 else C_GRID
+            pygame.draw.line(self.screen, c, (cr.x, sy), (cr.right, sy))
+
+        bx0, by0 = self.world_to_screen(0, 0)
+        bx1, by1 = self.world_to_screen(GAME_W, GAME_H)
+        border_rect = pygame.Rect(bx0, by0, bx1 - bx0, by1 - by0)
+        pygame.draw.rect(self.screen, (60, 70, 100), border_rect, 2)
+        lbl = self.font_sm.render(str(GAME_W) + "x" + str(GAME_H), True, C_TEXT_DIM)
+        self.screen.blit(lbl, (bx0 + 4, by0 + 2))
+
+        for i, e in enumerate(self.entities):
+            self._draw_entity(e, i == self.selected_idx)
+
+        if self._place_step == 1 and self._place_entity:
+            mx, my = pygame.mouse.get_pos()
+            if cr.collidepoint(mx, my):
+                e = self._place_entity
+                sx1, sy1 = self.world_to_screen(e.x, e.y)
+                if e.type == "platform":
+                    pygame.draw.line(self.screen, C_PLATFORM, (sx1, sy1), (mx, my), 4)
+                elif e.type == "teleport":
+                    pygame.draw.line(self.screen, C_TELEPORT, (sx1, sy1), (mx, my), 2)
+                    pygame.draw.circle(self.screen, C_TELEPORT, (mx, my), 12, 2)
+
+        self.screen.set_clip(None)
+
+    def _draw_entity(self, e, selected):
+        sx, sy = self.world_to_screen(e.x, e.y)
+        r = max(6, int(14 * self.zoom))
+
+        if e.type == "candy":
+            pygame.draw.circle(self.screen, C_CANDY, (sx, sy), r)
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+            lbl = self.font_sm.render("Candy", True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy + r + 2))
+
+        elif e.type == "target":
+            tr = max(8, int(e.radius * self.zoom))
+            pygame.draw.circle(self.screen, C_TARGET, (sx, sy), tr, 3)
+            pygame.draw.circle(self.screen, C_TARGET, (sx, sy), max(3, tr // 3))
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), tr + 3, 2)
+            lbl = self.font_sm.render("Target", True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy + tr + 2))
+
+        elif e.type == "anchor":
+            color = (200, 80, 80) if e.is_elastic else C_ANCHOR
+            pygame.draw.circle(self.screen, color, (sx, sy), r)
+            rope_len_px = int(e.length * self.zoom)
+            end_y = sy + rope_len_px
+            pygame.draw.line(self.screen, color, (sx, sy), (sx, end_y), 2)
+            # Drag handle at rope end (bigger, colored)
+            handle_r = max(5, int(7 * self.zoom))
+            pygame.draw.circle(self.screen, (255, 200, 100), (sx, end_y), handle_r)
+            pygame.draw.circle(self.screen, (200, 150, 60), (sx, end_y), handle_r, 2)
+            # Length label near handle
+            len_lbl = self.font_sm.render(str(int(e.length)) + "px", True, C_TEXT_DIM)
+            self.screen.blit(len_lbl, (sx + handle_r + 4, end_y - 6))
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, end_y), handle_r + 3, 2)
+            lbl = self.font_sm.render(e.letter + (" (elastic)" if e.is_elastic else ""), True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy - r - 16))
+
+        elif e.type == "magnet":
+            pygame.draw.circle(self.screen, C_MAGNET, (sx, sy), r)
+            mr = max(8, int(e.radius * self.zoom))
+            pygame.draw.circle(self.screen, C_MAGNET, (sx, sy), mr, 1)
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+            lbl = self.font_sm.render("Mag " + e.letter, True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy - r - 16))
+
+        elif e.type == "slider":
+            tx1, ty1 = self.world_to_screen(e.track_x1, e.track_y1)
+            tx2, ty2 = self.world_to_screen(e.track_x2, e.track_y2)
+            pygame.draw.line(self.screen, C_SLIDER, (tx1, ty1), (tx2, ty2), 3)
+            pygame.draw.circle(self.screen, C_SLIDER, (sx, sy), r)
+            pygame.draw.circle(self.screen, (120, 80, 180), (tx1, ty1), 5)
+            pygame.draw.circle(self.screen, (120, 80, 180), (tx2, ty2), 5)
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+            lbl = self.font_sm.render("Sld " + e.letter, True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy - r - 16))
+
+        elif e.type == "winch":
+            pygame.draw.circle(self.screen, C_WINCH, (sx, sy), r)
+            rope_len_px = int(e.length * self.zoom)
+            end_y = sy + rope_len_px
+            pygame.draw.line(self.screen, C_WINCH, (sx, sy), (sx, end_y), 2)
+            # Drag handle at rope end
+            handle_r = max(5, int(7 * self.zoom))
+            pygame.draw.circle(self.screen, (255, 200, 100), (sx, end_y), handle_r)
+            pygame.draw.circle(self.screen, (200, 150, 60), (sx, end_y), handle_r, 2)
+            len_lbl = self.font_sm.render(str(int(e.length)) + "px", True, C_TEXT_DIM)
+            self.screen.blit(len_lbl, (sx + handle_r + 4, end_y - 6))
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, end_y), handle_r + 3, 2)
+            lbl = self.font_sm.render("Wnc " + e.letter, True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy - r - 16))
+
+        elif e.type == "platform":
+            sx2, sy2 = self.world_to_screen(e.x2, e.y2)
+            th = max(2, int(e.thickness * self.zoom))
+            pygame.draw.line(self.screen, C_PLATFORM, (sx, sy), (sx2, sy2), th)
+            pygame.draw.circle(self.screen, (140, 145, 170), (sx, sy), 5)
+            pygame.draw.circle(self.screen, (140, 145, 170), (sx2, sy2), 5)
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), 8, 2)
+                pygame.draw.circle(self.screen, C_SELECTED, (sx2, sy2), 8, 2)
+
+        elif e.type == "spike":
+            hw = max(5, int(e.width / 2 * self.zoom))
+            hh = max(3, int(e.height / 2 * self.zoom))
+            if e.direction == "up":
+                pts = [(sx - hw, sy + hh), (sx + hw, sy + hh), (sx, sy - hh)]
+            elif e.direction == "down":
+                pts = [(sx - hw, sy - hh), (sx + hw, sy - hh), (sx, sy + hh)]
+            elif e.direction == "left":
+                pts = [(sx + hh, sy - hw), (sx + hh, sy + hw), (sx - hh, sy)]
+            else:
+                pts = [(sx - hh, sy - hw), (sx - hh, sy + hw), (sx + hh, sy)]
+            pygame.draw.polygon(self.screen, C_SPIKE, pts)
+            if selected:
+                pygame.draw.polygon(self.screen, C_SELECTED, pts, 2)
+
+        elif e.type == "teleport":
+            bsx, bsy = self.world_to_screen(e.bx, e.by)
+            pr = max(8, int(16 * self.zoom))
+            # Portal A (entry) - draw with direction arrow
+            pygame.draw.circle(self.screen, C_TELEPORT, (sx, sy), pr, 3)
+            # Portal B (exit)
+            pygame.draw.circle(self.screen, (220, 150, 255), (bsx, bsy), pr, 3)
+            # Connection line
+            pygame.draw.line(self.screen, (80, 60, 120), (sx, sy), (bsx, bsy), 1)
+
+            # Draw direction arrows for both portals
+            arrow_len = max(10, int(22 * self.zoom))
+            for (px, py, angle, color, label) in [
+                (sx, sy, e.angle_a, C_TELEPORT, "IN"),
+                (bsx, bsy, e.angle_b, (220, 150, 255), "OUT"),
+            ]:
+                # Arrow points IN the direction the angle faces (entry/exit direction)
+                ax = px + arrow_len * math.cos(angle)
+                ay = py - arrow_len * math.sin(angle)  # screen Y is flipped
+                # Arrow line
+                pygame.draw.line(self.screen, color, (px, py), (int(ax), int(ay)), 3)
+                # Arrowhead
+                head_size = max(5, int(8 * self.zoom))
+                perp = math.pi / 6
+                for sign in [-1, 1]:
+                    hx = ax - head_size * math.cos(angle + sign * perp)
+                    hy = ay + head_size * math.sin(angle + sign * perp)
+                    pygame.draw.line(self.screen, color, (int(ax), int(ay)), (int(hx), int(hy)), 2)
+                # Label
+                lbl = self.font_sm.render(label, True, color)
+                self.screen.blit(lbl, (px - lbl.get_width() // 2, py + pr + 2))
+
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), pr + 2, 2)
+                pygame.draw.circle(self.screen, C_SELECTED, (bsx, bsy), pr + 2, 2)
+
+        elif e.type == "spider":
+            pygame.draw.circle(self.screen, (50, 40, 50), (sx, sy), r)
+            for side in [-1, 1]:
+                for j in range(3):
+                    angle = -0.5 + j * 0.5
+                    lx = sx + side * int((r + 6) * math.cos(angle))
+                    ly = sy + int((r + 6) * math.sin(angle))
+                    pygame.draw.line(self.screen, (70, 60, 70), (sx + side * 3, sy), (lx, ly), 2)
+            pygame.draw.circle(self.screen, (220, 40, 40), (sx - 4, sy - 3), 3)
+            pygame.draw.circle(self.screen, (220, 40, 40), (sx + 4, sy - 3), 3)
+            if selected:
+                pygame.draw.circle(self.screen, C_SELECTED, (sx, sy), r + 3, 2)
+            # Draw a dashed line to the rope anchor it's attached to
+            ropes = self._get_ropes()
+            rope_letter = "?"
+            if 0 <= e.rope_index < len(ropes):
+                _, rope_letter, _ = ropes[e.rope_index]
+                # Find the anchor entity to draw connection line
+                rope_ents = [ent for ent in self.entities if ent.type in ("anchor", "magnet", "slider", "winch")]
+                if e.rope_index < len(rope_ents):
+                    re = rope_ents[e.rope_index]
+                    rsx, rsy = self.world_to_screen(re.x, re.y)
+                    # Dashed connection line
+                    dx, dy = rsx - sx, rsy - sy
+                    dist = math.hypot(dx, dy)
+                    if dist > 1:
+                        segs = max(1, int(dist / 12))
+                        for seg_i in range(0, segs, 2):
+                            t1 = seg_i / segs
+                            t2 = min(1.0, (seg_i + 1) / segs)
+                            p1 = (int(sx + dx * t1), int(sy + dy * t1))
+                            p2 = (int(sx + dx * t2), int(sy + dy * t2))
+                            pygame.draw.line(self.screen, (180, 80, 80), p1, p2, 1)
+            lbl = self.font_sm.render("Spider -> " + rope_letter, True, C_TEXT)
+            self.screen.blit(lbl, (sx - lbl.get_width() // 2, sy + r + 2))
+
+    def _draw_right_panel(self):
+        rx = self.win_w - self.RIGHT_W
+        panel = pygame.Rect(rx, 0, self.RIGHT_W, self.win_h)
+        pygame.draw.rect(self.screen, C_PANEL, panel)
+        pygame.draw.line(self.screen, C_PANEL_BORDER, (rx, 0), (rx, self.win_h))
+
+        title = self.font_lg.render("PROPERTIES", True, C_TEXT)
+        self.screen.blit(title, (rx + self.RIGHT_W // 2 - title.get_width() // 2, 10))
+
+        self.inp_name.rect.x = rx + 15
+        self.inp_name.rect.y = 55
+        self.inp_name.rect.width = self.RIGHT_W - 30
+        self.inp_name.draw(self.screen)
+
+        st_title = self.font_md.render("Star Times (sec)", True, C_TEXT)
+        self.screen.blit(st_title, (rx + 15, 100))
+
+        star_y = 135
+        iw = 55
+        self.inp_star3.rect.topleft = (rx + 15, star_y)
+        self.inp_star2.rect.topleft = (rx + 80, star_y)
+        self.inp_star1.rect.topleft = (rx + 145, star_y)
+        for inp in [self.inp_star3, self.inp_star2, self.inp_star1]:
+            inp.rect.width = iw
+            inp.draw(self.screen)
+        for ix in [rx + 15 + iw // 2, rx + 80 + iw // 2, rx + 145 + iw // 2]:
+            draw_star(self.screen, ix, star_y - 8, 8, True)
+
+        sep_y = star_y + 44
+        pygame.draw.line(self.screen, C_PANEL_BORDER, (rx + 10, sep_y), (rx + self.RIGHT_W - 10, sep_y))
+
+        props_y = sep_y + 10
+        if 0 <= self.selected_idx < len(self.entities):
+            e = self.entities[self.selected_idx]
+            hdr = self.font_md.render("Selected: " + e.type.title(), True, C_ACCENT)
+            self.screen.blit(hdr, (rx + 15, props_y))
+            props_y += 26
+            pos_txt = "x=" + str(int(e.x)) + "  y=" + str(int(e.y))
+            ptxt = self.font_sm.render(pos_txt, True, C_TEXT_DIM)
+            self.screen.blit(ptxt, (rx + 15, props_y))
+            props_y += 20
+
+            input_y = props_y + 10
+            for inp in self._prop_inputs:
+                inp.rect.x = rx + 15
+                inp.rect.y = input_y
+                inp.draw(self.screen)
+                input_y += 46
+
+            # ---- Spider: rope picker buttons ----
+            self._spider_rope_btns = []
+            if e.type == "spider":
+                ropes = self._get_ropes()
+                if ropes:
+                    rlbl = self.font.render("Attach to rope:", True, C_TEXT_DIM)
+                    self.screen.blit(rlbl, (rx + 15, input_y))
+                    input_y += 22
+                    btn_x = rx + 15
+                    for ri, (ridx, rletter, rtype) in enumerate(ropes):
+                        is_active = (e.rope_index == ridx)
+                        btn = pygame.Rect(btn_x, input_y, 44, 28)
+                        mx2, my2 = pygame.mouse.get_pos()
+                        hover = btn.collidepoint(mx2, my2)
+                        if is_active:
+                            pygame.draw.rect(self.screen, C_ACCENT, btn, border_radius=6)
+                        elif hover:
+                            pygame.draw.rect(self.screen, C_HOVER, btn, border_radius=6)
+                        else:
+                            pygame.draw.rect(self.screen, (38, 42, 55), btn, border_radius=6)
+                        pygame.draw.rect(self.screen, C_PANEL_BORDER, btn, width=1, border_radius=6)
+                        btxt = self.font.render(rletter, True, (255, 255, 255) if is_active else C_TEXT)
+                        self.screen.blit(btxt, (btn.centerx - btxt.get_width() // 2,
+                                                btn.centery - btxt.get_height() // 2))
+                        self._spider_rope_btns.append((btn, ridx))
+                        btn_x += 50
+                        if btn_x + 44 > rx + self.RIGHT_W - 10:
+                            btn_x = rx + 15
+                            input_y += 34
+                    input_y += 34
+                    # Show selected rope info
+                    if 0 <= e.rope_index < len(ropes):
+                        _, sl, st = ropes[e.rope_index]
+                        info = self.font_sm.render("On rope " + sl + " (" + st + ")", True, C_SUCCESS)
+                        self.screen.blit(info, (rx + 15, input_y))
+                        input_y += 20
+                else:
+                    warn = self.font_sm.render("No ropes! Place an anchor first.", True, C_DANGER)
+                    self.screen.blit(warn, (rx + 15, input_y))
+                    input_y += 20
+
+            # ---- Teleport: angle rotation buttons ----
+            self._tp_angle_btns = []
+            if e.type == "teleport":
+                input_y += 8
+                for portal_label, portal_color, angle_val, key_prefix in [
+                    ("Entry (IN) direction:", C_TELEPORT, e.angle_a, "a"),
+                    ("Exit (OUT) direction:", (220, 150, 255), e.angle_b, "b"),
+                ]:
+                    plbl = self.font.render(portal_label, True, portal_color)
+                    self.screen.blit(plbl, (rx + 15, input_y))
+                    input_y += 22
+                    # Show current angle as compass direction
+                    deg = int(math.degrees(angle_val)) % 360
+                    compass = {0: "Right", 45: "Up-Right", 90: "Up", 135: "Up-Left",
+                               180: "Left", 225: "Down-Left", 270: "Down", 315: "Down-Right"}
+                    nearest = min(compass.keys(), key=lambda d: abs((deg - d + 180) % 360 - 180))
+                    dir_name = compass.get(nearest, str(deg) + "deg")
+                    dir_lbl = self.font_md.render(dir_name, True, C_TEXT)
+                    self.screen.blit(dir_lbl, (rx + 15, input_y))
+                    # Rotate buttons
+                    ccw_btn = pygame.Rect(rx + 140, input_y, 36, 24)
+                    cw_btn = pygame.Rect(rx + 180, input_y, 36, 24)
+                    mx2, my2 = pygame.mouse.get_pos()
+                    for btn, symbol, action in [
+                        (ccw_btn, "\u21ba", key_prefix + "_ccw"),
+                        (cw_btn, "\u21bb", key_prefix + "_cw"),
+                    ]:
+                        hover = btn.collidepoint(mx2, my2)
+                        bc = C_HOVER if hover else (38, 42, 55)
+                        pygame.draw.rect(self.screen, bc, btn, border_radius=5)
+                        pygame.draw.rect(self.screen, portal_color, btn, width=1, border_radius=5)
+                        stxt = self.font.render(symbol, True, portal_color)
+                        self.screen.blit(stxt, (btn.centerx - stxt.get_width() // 2,
+                                                btn.centery - stxt.get_height() // 2))
+                        self._tp_angle_btns.append((btn, action))
+                    input_y += 34
+
+                # Hint
+                hint = self.font_sm.render("IN = where candy enters", True, C_TEXT_DIM)
+                self.screen.blit(hint, (rx + 15, input_y))
+                input_y += 16
+                hint2 = self.font_sm.render("OUT = where candy shoots out", True, C_TEXT_DIM)
+                self.screen.blit(hint2, (rx + 15, input_y))
+                input_y += 20
+
+            # ---- Entity-specific hints ----
+            if e.type == "anchor":
+                input_y += 6
+                for h in ["Drag orange handle to", "resize rope length.", "Elastic = stretchy rope."]:
+                    ht = self.font_sm.render(h, True, C_TEXT_DIM)
+                    self.screen.blit(ht, (rx + 15, input_y))
+                    input_y += 15
+            elif e.type == "winch":
+                input_y += 6
+                for h in ["Drag orange handle to", "resize rope. Player can", "retract/extend this rope."]:
+                    ht = self.font_sm.render(h, True, C_TEXT_DIM)
+                    self.screen.blit(ht, (rx + 15, input_y))
+                    input_y += 15
+            elif e.type == "candy":
+                input_y += 6
+                ht = self.font_sm.render("The ball the player needs", True, C_TEXT_DIM)
+                self.screen.blit(ht, (rx + 15, input_y))
+                input_y += 15
+                ht = self.font_sm.render("to get to the target.", True, C_TEXT_DIM)
+                self.screen.blit(ht, (rx + 15, input_y))
+            elif e.type == "target":
+                input_y += 6
+                ht = self.font_sm.render("Feed the candy into here!", True, C_TEXT_DIM)
+                self.screen.blit(ht, (rx + 15, input_y))
+            elif e.type == "platform":
+                input_y += 6
+                for h in ["Drag endpoints to reshape.", "Candy bounces off this."]:
+                    ht = self.font_sm.render(h, True, C_TEXT_DIM)
+                    self.screen.blit(ht, (rx + 15, input_y))
+                    input_y += 15
+            elif e.type == "spike":
+                input_y += 6
+                for h in ["Direction: up/down/left/right", "Candy pops on contact!"]:
+                    ht = self.font_sm.render(h, True, C_TEXT_DIM)
+                    self.screen.blit(ht, (rx + 15, input_y))
+                    input_y += 15
+            elif e.type == "magnet":
+                input_y += 6
+                ht = self.font_sm.render("Pulls candy when activated.", True, C_TEXT_DIM)
+                self.screen.blit(ht, (rx + 15, input_y))
+            elif e.type == "slider":
+                input_y += 6
+                for h in ["Rope slides along a track.", "Drag track endpoints in", "select mode."]:
+                    ht = self.font_sm.render(h, True, C_TEXT_DIM)
+                    self.screen.blit(ht, (rx + 15, input_y))
+                    input_y += 15
+        else:
+            no_sel = self.font.render("No selection", True, C_TEXT_DIM)
+            self.screen.blit(no_sel, (rx + 15, props_y + 10))
+            self._spider_rope_btns = []
+            self._tp_angle_btns = []
+
+        saved_y = max(self.win_h // 2 + 20, props_y + 80)
+        pygame.draw.line(self.screen, C_PANEL_BORDER,
+                         (rx + 10, saved_y - 10), (rx + self.RIGHT_W - 10, saved_y - 10))
+        hdr = self.font_md.render("Saved Levels", True, C_TEXT)
+        self.screen.blit(hdr, (rx + 15, saved_y))
+        saved_y += 28
+
+        self._saved_btn_rects = []
+        self._saved_del_rects = []
+        self.custom_levels = load_custom_levels()
+
+        clip_rect = pygame.Rect(rx, saved_y, self.RIGHT_W, self.win_h - saved_y - 10)
+        self.screen.set_clip(clip_rect)
+
+        iy = saved_y - self._saved_scroll
+        mx, my = pygame.mouse.get_pos()
+        for i, cl in enumerate(self.custom_levels):
+            name = cl.get("name", "Level " + str(i + 1))
+            btn = pygame.Rect(rx + 10, iy, self.RIGHT_W - 60, 28)
+            hover = btn.collidepoint(mx, my)
+            active = (i == self.editing_level_idx)
+            bc = C_ACCENT if active else (C_HOVER if hover else (38, 42, 55))
+            pygame.draw.rect(self.screen, bc, btn, border_radius=5)
+            lbl = self.font_sm.render(name[:20], True, C_TEXT)
+            self.screen.blit(lbl, (btn.x + 6, btn.centery - lbl.get_height() // 2))
+            self._saved_btn_rects.append((btn, i))
+
+            del_btn = pygame.Rect(rx + self.RIGHT_W - 42, iy, 28, 28)
+            del_hover = del_btn.collidepoint(mx, my)
+            dc = C_DANGER if del_hover else (80, 40, 40)
+            pygame.draw.rect(self.screen, dc, del_btn, border_radius=5)
+            xtxt = self.font_sm.render("X", True, C_TEXT)
+            self.screen.blit(xtxt, (del_btn.centerx - xtxt.get_width() // 2,
+                                    del_btn.centery - xtxt.get_height() // 2))
+            self._saved_del_rects.append((del_btn, i))
+            iy += 34
+
+        self.screen.set_clip(None)
+
+    def _draw_toast(self):
+        if self.toast_timer > 0 and self.toast_msg:
+            alpha = min(1.0, self.toast_timer * 3)
+            txt = self.font_md.render(self.toast_msg, True, C_SUCCESS)
+            tw = txt.get_width()
+            tx = self.win_w // 2 - tw // 2
+            ty = self.win_h - 50
+            bg = pygame.Surface((tw + 24, 32), pygame.SRCALPHA)
+            bg.fill((0, 0, 0, int(160 * alpha)))
+            self.screen.blit(bg, (tx - 12, ty - 4))
+            txt.set_alpha(int(255 * alpha))
+            self.screen.blit(txt, (tx, ty))
+
+    def run(self):
+        running = True
+        while running:
+            dt = self.clock.tick(60) / 1000.0
+            dt = min(dt, 0.05)
+            running = self.handle_events()
+            self.update(dt)
+            self.draw()
+            pygame.display.flip()
+        pygame.quit()
+
+
+if __name__ == "__main__":
+    editor = LevelEditor()
+    editor.run()

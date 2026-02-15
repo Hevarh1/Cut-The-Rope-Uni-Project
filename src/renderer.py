@@ -1,341 +1,241 @@
 """
-Professional rendering utilities with smooth animations and effects.
+Renderer, ParticleSystem, and StarField for Cut The Rope.
+Handles all drawing utilities, particle effects, and background stars.
 """
 
 import math
-from typing import Tuple, List, Optional
+import random
 import pygame
+from .config import (
+    WIDTH, HEIGHT, STAR_COUNT,
+    PARTICLE_GRAVITY, PARTICLE_FADE_SPEED,
+    COLOR_BG_GRADIENT_TOP, COLOR_BG_GRADIENT_BOTTOM,
+    COLOR_PARTICLE_STAR, COLOR_SLASH, COLOR_SLASH_GLOW,
+    MOUSE_TRAIL_LENGTH, MOUSE_TRAIL_WIDTH, MOUSE_TRAIL_GLOW_WIDTH,
+    GLOW_PULSE_SPEED,
+)
+from .utils import lerp, lerp_color, clamp
 
-from .config import *
-from .utils import lerp_color, ease_out_quad
+
+# ── Particle ──────────────────────────────────────────────────
+
+class Particle:
+    __slots__ = ("x", "y", "vx", "vy", "life", "max_life",
+                 "color", "size", "gravity", "fade_speed")
+
+    def __init__(self, x, y, vx, vy, life, color, size=3,
+                 gravity=PARTICLE_GRAVITY, fade_speed=PARTICLE_FADE_SPEED):
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.life = life
+        self.max_life = life
+        self.color = color
+        self.size = size
+        self.gravity = gravity
+        self.fade_speed = fade_speed
+
+    def update(self, dt):
+        self.vy += self.gravity * dt
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.life -= self.fade_speed * dt
+        return self.life > 0
+
+    def draw(self, surface):
+        alpha = clamp(self.life / self.max_life, 0, 1)
+        r = max(1, int(self.size * alpha))
+        c = (
+            int(self.color[0] * alpha),
+            int(self.color[1] * alpha),
+            int(self.color[2] * alpha),
+        )
+        pygame.draw.circle(surface, c, (int(self.x), int(self.y)), r)
 
 
-class Renderer:
-    """Handles all advanced rendering with caching for performance."""
-    
-    def __init__(self, screen: pygame.Surface):
-        self.screen = screen
-        self._gradient_cache = {}
-        self._glow_cache = {}
-    
-    def clear_cache(self):
-        """Clear rendering caches."""
-        self._gradient_cache.clear()
-        self._glow_cache.clear()
-    
-    def draw_gradient_rect(self, color_top: Tuple, color_bottom: Tuple, 
-                           rect: pygame.Rect, vertical: bool = True, 
-                           border_radius: int = 0):
-        """Draw a rectangle with smooth gradient and optional rounded corners."""
-        # Create a surface for the gradient
-        surf = pygame.Surface((rect.width, max(1, rect.height)), pygame.SRCALPHA)
-        
-        if vertical:
-            for i in range(rect.height):
-                t = i / max(1, rect.height - 1)
-                color = lerp_color(color_top, color_bottom, t)
-                pygame.draw.line(surf, color, (0, i), (rect.width, i))
-        else:
-            for i in range(rect.width):
-                t = i / max(1, rect.width - 1)
-                color = lerp_color(color_top, color_bottom, t)
-                pygame.draw.line(surf, color, (i, 0), (i, rect.height))
-        
-        # If rounded corners, create a mask
-        if border_radius > 0:
-            # Create a mask surface with rounded rectangle
-            mask_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            pygame.draw.rect(mask_surf, (255, 255, 255, 255), 
-                           mask_surf.get_rect(), border_radius=border_radius)
-            
-            # Apply mask to gradient
-            final_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            final_surf.blit(surf, (0, 0))
-            final_surf.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-            
-            self.screen.blit(final_surf, rect.topleft)
-        else:
-            self.screen.blit(surf, rect.topleft)
-    
-    def draw_gradient_circle(self, center_color: Tuple, edge_color: Tuple, 
-                             pos: Tuple[int, int], radius: int):
-        """Draw a circle with radial gradient for 3D effect."""
-        surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        
-        for i in range(radius, 0, -1):
-            t = 1 - (i / radius)  # 0 at edge, 1 at center
-            t = ease_out_quad(t)  # Smooth falloff
-            color = lerp_color(edge_color, center_color, t)
-            pygame.draw.circle(surf, color, (radius, radius), i)
-        
-        self.screen.blit(surf, (pos[0] - radius, pos[1] - radius))
-    
-    def draw_glow(self, color: Tuple, pos: Tuple[int, int], radius: int, 
-                  intensity: int = 3, alpha_base: int = 40):
-        """Draw a soft glow effect around a point."""
-        for i in range(intensity, 0, -1):
-            alpha = alpha_base * (intensity - i + 1) // intensity
-            glow_radius = radius + i * 4
-            
-            surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (*color[:3], alpha), 
-                             (glow_radius, glow_radius), glow_radius)
-            self.screen.blit(surf, (pos[0] - glow_radius, pos[1] - glow_radius))
-    
-    def draw_soft_shadow(self, rect: pygame.Rect, offset: int = 4, 
-                         blur: int = 3, alpha: int = 60):
-        """Draw a soft shadow under an object."""
-        shadow_surf = pygame.Surface((rect.width + blur * 2, rect.height + blur * 2), 
-                                     pygame.SRCALPHA)
-        shadow_rect = pygame.Rect(blur, blur, rect.width, rect.height)
-        
-        # Multiple layers for soft shadow
-        for i in range(blur, 0, -1):
-            layer_alpha = alpha // blur
-            expanded = shadow_rect.inflate(i * 2, i * 2)
-            pygame.draw.rect(shadow_surf, (0, 0, 0, layer_alpha), expanded, 
-                           border_radius=8)
-        
-        self.screen.blit(shadow_surf, 
-                        (rect.x - blur + offset, rect.y - blur + offset))
-    
-    def draw_text_with_shadow(self, text: str, font: pygame.font.Font,
-                              pos: Tuple[int, int], color: Tuple = COLOR_TEXT,
-                              shadow_color: Tuple = COLOR_TEXT_SHADOW,
-                              shadow_offset: int = 2):
-        """Draw text with a drop shadow for better readability."""
-        shadow_surf = font.render(text, True, shadow_color)
-        text_surf = font.render(text, True, color)
-        
-        self.screen.blit(shadow_surf, (pos[0] + shadow_offset, pos[1] + shadow_offset))
-        self.screen.blit(text_surf, pos)
-    
-    def draw_text_centered(self, text: str, font: pygame.font.Font,
-                           center: Tuple[int, int], color: Tuple = COLOR_TEXT,
-                           shadow: bool = True):
-        """Draw text centered at a position."""
-        text_surf = font.render(text, True, color)
-        rect = text_surf.get_rect(center=center)
-        
-        if shadow:
-            shadow_surf = font.render(text, True, COLOR_TEXT_SHADOW)
-            self.screen.blit(shadow_surf, (rect.x + 2, rect.y + 2))
-        
-        self.screen.blit(text_surf, rect)
-    
-    def draw_panel(self, rect: pygame.Rect, alpha: int = 220, 
-                   border_radius: int = 12):
-        """Draw a semi-transparent UI panel."""
-        panel_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        
-        # Background
-        bg_color = (*COLOR_BG[:3], alpha)
-        pygame.draw.rect(panel_surf, bg_color, panel_surf.get_rect(), 
-                        border_radius=border_radius)
-        
-        # Border
-        border_color = (*COLOR_PANEL_BORDER[:3], alpha // 2)
-        pygame.draw.rect(panel_surf, border_color, panel_surf.get_rect(), 
-                        width=2, border_radius=border_radius)
-        
-        self.screen.blit(panel_surf, rect.topleft)
-    
-    def draw_progress_bar(self, rect: pygame.Rect, progress: float,
-                          bg_color: Tuple = (40, 45, 65),
-                          fill_color_start: Tuple = COLOR_TARGET_GLOW,
-                          fill_color_end: Tuple = COLOR_TARGET,
-                          border_radius: int = 10):
-        """Draw an animated progress bar with gradient fill and proper rounded corners."""
-        # Shadow
-        shadow_rect = rect.copy()
-        shadow_rect.x += 2
-        shadow_rect.y += 2
-        pygame.draw.rect(self.screen, (20, 20, 30), shadow_rect, 
-                        border_radius=border_radius)
-        
-        # Background with rounded corners
-        pygame.draw.rect(self.screen, bg_color, rect, border_radius=border_radius)
-        
-        # Fill with gradient and proper clipping
-        if progress > 0:
-            fill_width = int(rect.width * min(1.0, progress))
-            if fill_width > 0:
-                # Create fill surface
-                fill_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                
-                # Draw gradient on fill surface
-                for i in range(fill_width):
-                    t = i / max(1, rect.width - 1)
-                    color = lerp_color(fill_color_start, fill_color_end, t)
-                    pygame.draw.line(fill_surf, color, (i, 0), (i, rect.height))
-                
-                # Create mask for rounded corners
-                mask_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                pygame.draw.rect(mask_surf, (255, 255, 255, 255), 
-                               mask_surf.get_rect(), border_radius=border_radius)
-                
-                # Apply mask
-                fill_surf.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-                
-                # Draw to screen
-                self.screen.blit(fill_surf, rect.topleft)
-        
-        # Border with rounded corners
-        pygame.draw.rect(self.screen, fill_color_start, rect, 
-                        width=2, border_radius=border_radius)
-    
-    def draw_button_3d(self, rect: pygame.Rect, text: str, font: pygame.font.Font,
-                       color_top: Tuple = COLOR_PLATFORM_HIGHLIGHT,
-                       color_bottom: Tuple = COLOR_PLATFORM,
-                       pressed: bool = False,
-                       border_radius: int = 10):
-        """Draw a 3D-style button with proper rounded corners."""
-        offset = 1 if pressed else 3
-        
-        # Shadow
-        shadow_rect = rect.copy()
-        shadow_rect.y += offset
-        pygame.draw.rect(self.screen, (30, 35, 50), shadow_rect, border_radius=border_radius)
-        
-        # Button face with gradient and rounded corners
-        button_rect = rect if pressed else rect
-        self.draw_gradient_rect(color_top, color_bottom, button_rect, border_radius=border_radius)
-        pygame.draw.rect(self.screen, COLOR_ANCHOR_GLOW, button_rect, 
-                        width=2, border_radius=border_radius)
-        
-        # Text
-        self.draw_text_centered(text, font, button_rect.center)
-
+# ── ParticleSystem ────────────────────────────────────────────
 
 class ParticleSystem:
-    """Manages particle effects for impacts, cuts, and celebrations."""
-    
     def __init__(self):
-        self.particles: List[dict] = []
-    
-    def emit(self, pos: Tuple[float, float], count: int = 5,
-             color: Tuple = COLOR_PARTICLE_BOUNCE, 
-             speed_range: Tuple[float, float] = (30, 80),
-             size_range: Tuple[float, float] = (2, 5),
-             life: float = 1.0, gravity: float = PARTICLE_GRAVITY):
-        """Emit particles from a position."""
-        import random
-        
+        self.particles: list[Particle] = []
+
+    def emit(self, x, y, color, count=12, speed=180,
+             life=0.8, size=3, gravity=PARTICLE_GRAVITY):
         for _ in range(count):
-            angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(*speed_range)
-            
-            self.particles.append({
-                'x': pos[0],
-                'y': pos[1],
-                'vx': speed * math.cos(angle),
-                'vy': speed * math.sin(angle),
-                'life': life,
-                'max_life': life,
-                'size': random.uniform(*size_range),
-                'color': color,
-                'gravity': gravity
-            })
-    
-    def emit_burst(self, pos: Tuple[float, float], count: int = 20,
-                   color: Tuple = COLOR_PARTICLE_SUCCESS):
-        """Emit a burst of celebration particles."""
-        import random
-        
+            angle = random.uniform(0, math.pi * 2)
+            spd = random.uniform(speed * 0.3, speed)
+            vx = math.cos(angle) * spd
+            vy = math.sin(angle) * spd
+            p = Particle(x, y, vx, vy,
+                         random.uniform(life * 0.5, life),
+                         color, random.uniform(size * 0.5, size),
+                         gravity)
+            self.particles.append(p)
+
+    def emit_burst(self, x, y, color, count=20, speed=250,
+                   life=1.0, size=4, gravity=PARTICLE_GRAVITY):
+        """Bigger burst for special events."""
+        self.emit(x, y, color, count, speed, life, size, gravity)
+
+    def emit_line(self, x1, y1, x2, y2, color, count=8, speed=60,
+                  life=0.5, size=2):
+        """Emit along a line (for rope cuts)."""
         for i in range(count):
-            angle = (2 * math.pi * i / count) + random.uniform(-0.2, 0.2)
-            speed = random.uniform(100, 200)
-            
-            self.particles.append({
-                'x': pos[0],
-                'y': pos[1],
-                'vx': speed * math.cos(angle),
-                'vy': speed * math.sin(angle),
-                'life': random.uniform(0.8, 1.5),
-                'max_life': 1.5,
-                'size': random.uniform(3, 6),
-                'color': color,
-                'gravity': PARTICLE_GRAVITY * 0.5
-            })
-    
-    def update(self, dt: float):
-        """Update all particles."""
-        for particle in self.particles[:]:
-            particle['life'] -= dt * PARTICLE_FADE_SPEED
-            particle['x'] += particle['vx'] * dt
-            particle['y'] -= particle['vy'] * dt  # Pymunk coords
-            particle['vy'] -= particle['gravity'] * dt
-            
-            # Shrink as it dies
-            life_ratio = particle['life'] / particle['max_life']
-            particle['current_size'] = particle['size'] * life_ratio
-            
-            if particle['life'] <= 0:
-                self.particles.remove(particle)
-    
-    def draw(self, renderer: Renderer, convert_coords=None):
-        """Draw all particles."""
-        for particle in self.particles:
-            if convert_coords:
-                pos = convert_coords((particle['x'], particle['y']))
-            else:
-                pos = (int(particle['x']), int(particle['y']))
-            
-            life_ratio = max(0, particle['life'] / particle['max_life'])
-            alpha = int(255 * life_ratio)
-            size = max(1, int(particle.get('current_size', particle['size'])))
-            
-            if alpha > 0 and size > 0:
-                color = particle['color']
-                
-                # Draw glow
-                glow_surf = pygame.Surface((size * 4, size * 4), pygame.SRCALPHA)
-                pygame.draw.circle(glow_surf, (*color[:3], alpha // 3), 
-                                 (size * 2, size * 2), size * 2)
-                renderer.screen.blit(glow_surf, (pos[0] - size * 2, pos[1] - size * 2))
-                
-                # Draw particle
-                surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
-                pygame.draw.circle(surf, (*color[:3], alpha), (size, size), size)
-                renderer.screen.blit(surf, (pos[0] - size, pos[1] - size))
-    
-    def clear(self):
-        """Remove all particles."""
-        self.particles.clear()
+            t = i / max(1, count - 1)
+            px = lerp(x1, x2, t)
+            py = lerp(y1, y2, t)
+            angle = random.uniform(0, math.pi * 2)
+            spd = random.uniform(speed * 0.3, speed)
+            self.particles.append(
+                Particle(px, py,
+                         math.cos(angle) * spd,
+                         math.sin(angle) * spd,
+                         random.uniform(life * 0.5, life),
+                         color, random.uniform(size * 0.5, size))
+            )
+
+    def update(self, dt):
+        self.particles = [p for p in self.particles if p.update(dt)]
+
+    def draw(self, surface):
+        for p in self.particles:
+            p.draw(surface)
+
+
+# ── StarField ─────────────────────────────────────────────────
+
+class Star:
+    __slots__ = ("x", "y", "size", "speed", "phase", "brightness")
+
+    def __init__(self):
+        self.x = random.randint(0, WIDTH)
+        self.y = random.randint(0, HEIGHT)
+        self.size = random.uniform(0.5, 2.0)
+        self.speed = random.uniform(0.5, 2.0)
+        self.phase = random.uniform(0, math.pi * 2)
+        self.brightness = random.uniform(0.3, 1.0)
 
 
 class StarField:
-    """Animated twinkling star background."""
-    
-    def __init__(self, count: int = STAR_COUNT):
-        import random
-        self.stars = []
-        
-        for _ in range(count):
-            self.stars.append({
-                'x': random.randint(0, WIDTH),
-                'y': random.randint(0, HEIGHT),
-                'size': random.uniform(1, 3),
-                'speed': random.uniform(0.5, 2.0),
-                'offset': random.uniform(0, math.pi * 2)
-            })
-    
-    def draw(self, screen: pygame.Surface, time: float):
-        """Draw twinkling stars."""
-        for star in self.stars:
-            twinkle = (math.sin(time * star['speed'] + star['offset']) + 1) / 2
-            twinkle = twinkle * 0.5 + 0.5  # Range: 0.5 to 1.0
-            
-            alpha = int(200 * twinkle)
-            size = max(1, int(star['size'] * twinkle))
-            
-            surf = pygame.Surface((size * 2 + 2, size * 2 + 2), pygame.SRCALPHA)
-            
-            # Star glow
-            pygame.draw.circle(surf, (255, 255, 255, alpha // 3), 
-                             (size + 1, size + 1), size + 1)
-            # Star core
-            pygame.draw.circle(surf, (255, 255, 255, alpha), 
-                             (size + 1, size + 1), size)
-            
-            screen.blit(surf, (star['x'] - size - 1, star['y'] - size - 1))
+    def __init__(self, count=STAR_COUNT):
+        self.stars = [Star() for _ in range(count)]
+        self._time = 0.0
+
+    def update(self, dt):
+        self._time += dt
+
+    def draw(self, surface):
+        for s in self.stars:
+            twinkle = 0.5 + 0.5 * math.sin(self._time * s.speed + s.phase)
+            alpha = s.brightness * twinkle
+            c = (
+                int(COLOR_PARTICLE_STAR[0] * alpha),
+                int(COLOR_PARTICLE_STAR[1] * alpha),
+                int(COLOR_PARTICLE_STAR[2] * alpha),
+            )
+            r = max(1, int(s.size * (0.6 + 0.4 * twinkle)))
+            pygame.draw.circle(surface, c, (int(s.x), int(s.y)), r)
+
+
+# ── Renderer ──────────────────────────────────────────────────
+
+class Renderer:
+    """Manages the virtual canvas, scaling, and background."""
+
+    def __init__(self):
+        self.virtual_surface = pygame.Surface((WIDTH, HEIGHT))
+        self.star_field = StarField()
+        self.particle_system = ParticleSystem()
+        self._glow_time = 0.0
+        # Mouse trail
+        self._trail: list[tuple[int, int]] = []
+
+    # ── background ────────────────────────────────────────────
+
+    def draw_background(self, surface: pygame.Surface):
+        """Draw the gradient background."""
+        for y in range(HEIGHT):
+            t = y / HEIGHT
+            c = lerp_color(COLOR_BG_GRADIENT_TOP, COLOR_BG_GRADIENT_BOTTOM, t)
+            pygame.draw.line(surface, c, (0, y), (WIDTH, y))
+
+    # ── scaling ───────────────────────────────────────────────
+
+    @staticmethod
+    def get_scale_rect(window_w, window_h):
+        """Return (scale, dest_rect) for letter-boxing."""
+        scale = min(window_w / WIDTH, window_h / HEIGHT)
+        sw = int(WIDTH * scale)
+        sh = int(HEIGHT * scale)
+        ox = (window_w - sw) // 2
+        oy = (window_h - sh) // 2
+        return scale, pygame.Rect(ox, oy, sw, sh)
+
+    def window_to_virtual(self, pos, scale, dest_rect):
+        """Convert window pixel → virtual canvas pixel."""
+        x = (pos[0] - dest_rect.x) / scale
+        y = (pos[1] - dest_rect.y) / scale
+        return int(x), int(y)
+
+    # ── mouse trail ───────────────────────────────────────────
+
+    def update_trail(self, vpos):
+        if vpos is not None:
+            self._trail.append(vpos)
+        if len(self._trail) > MOUSE_TRAIL_LENGTH:
+            self._trail = self._trail[-MOUSE_TRAIL_LENGTH:]
+
+    def clear_trail(self):
+        self._trail.clear()
+
+    def draw_trail(self, surface):
+        if len(self._trail) < 2:
+            return
+        for i in range(1, len(self._trail)):
+            t = i / len(self._trail)
+            alpha = int(255 * t * t)
+            # glow
+            gc = (COLOR_SLASH_GLOW[0], COLOR_SLASH_GLOW[1],
+                  COLOR_SLASH_GLOW[2])
+            gw = max(1, int(MOUSE_TRAIL_GLOW_WIDTH * t))
+            gsurf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            pygame.draw.line(gsurf, (*gc, alpha // 2),
+                             self._trail[i - 1], self._trail[i], gw)
+            surface.blit(gsurf, (0, 0))
+            # core
+            cc = (COLOR_SLASH[0], COLOR_SLASH[1], COLOR_SLASH[2])
+            w = max(1, int(MOUSE_TRAIL_WIDTH * t))
+            csurf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            pygame.draw.line(csurf, (*cc, alpha),
+                             self._trail[i - 1], self._trail[i], w)
+            surface.blit(csurf, (0, 0))
+
+    # ── helpers ───────────────────────────────────────────────
+
+    def glow_pulse(self):
+        """Returns a 0-1 pulse value for glowing effects."""
+        self._glow_time += GLOW_PULSE_SPEED
+        return 0.5 + 0.5 * math.sin(self._glow_time)
+
+    def update(self, dt):
+        self.star_field.update(dt)
+        self.particle_system.update(dt)
+
+    def begin_frame(self):
+        """Prepare the virtual surface for a new frame."""
+        self.draw_background(self.virtual_surface)
+        self.star_field.draw(self.virtual_surface)
+
+    def end_frame(self, window_surface):
+        """Draw trail / particles, then blit virtual → window."""
+        self.draw_trail(self.virtual_surface)
+        self.particle_system.draw(self.virtual_surface)
+
+        w, h = window_surface.get_size()
+        scale, dest = self.get_scale_rect(w, h)
+        window_surface.fill((0, 0, 0))
+        scaled = pygame.transform.smoothscale(self.virtual_surface,
+                                              (dest.width, dest.height))
+        window_surface.blit(scaled, dest)
+        return scale, dest
