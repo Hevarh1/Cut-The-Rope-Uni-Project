@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture 4 - Architecture (Cut The Rope)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <link rel="stylesheet" href="presentation-styles.css">
+    <link rel="stylesheet" href="arch-presentation.css">
+</head>
+
+<body class="architecture-deck">
+    <div class="reveal">
+        <div class="slides">
+
+            <section id="title">
+                <div class="title-content">
+                    <div class="scissors-icon"><i class="ph-duotone ph-tree-structure"></i></div>
+                    <h1>Lecture 4: <span class="highlight-rope">Architecture</span></h1>
+                    <p class="tagline">Cut The Rope as a layered, deterministic game system.</p>
+                    <div class="credit-row">
+                        <div class="credit-card">
+                            <p class="credit-label">Focus</p>
+                            <p class="credit-name">Module Boundaries</p>
+                            <p class="credit-name">Loop Determinism</p>
+                            <p class="credit-name">State + Event Flow</p>
+                            <p class="credit-name">Data-Driven Tooling</p>
+                        </div>
+                        <div class="credit-card">
+                            <p class="credit-label">Case Study</p>
+                            <p class="credit-name accent">Python + pygame-ce + Pymunk</p>
+                            <p class="credit-name">Project: Cut The Rope</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="system-break" class="section-break">
+                <div class="break-content">
+                    <h2>System Architecture</h2>
+                    <p>From app flow to physics constraints and rendering boundaries.</p>
+                </div>
+            </section>
+
+            <section id="module-map">
+                <h2>1) Module Boundaries and Dependency Flow</h2>
+                <div class="content">
+                    <div class="architecture-grid">
+                        <div class="arch-card core">
+                            <h4>run.py</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">App.run()</span> clamps <span class="mono">dt</span> and owns
+                                    frame cadence.</li>
+                                <li><span class="mono">App._handle_event()</span> routes raw input by active screen
+                                    state.</li>
+                            </ul>
+                            <p class="card-hook">Boundary: application shell only, no simulation rules.</p>
+                        </div>
+                        <div class="arch-card core">
+                            <h4>src/game.py</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">Game._create_entities()</span> builds anchors, hazards,
+                                    teleports, and ropes.</li>
+                                <li>Orchestrates update order: input effects, mechanic logic, physics step, draw
+                                    handoff.</li>
+                            </ul>
+                            <p class="card-hook">Boundary: gameplay orchestration and level lifecycle.</p>
+                        </div>
+                        <div class="arch-card engine">
+                            <h4>src/physics.py</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">setup_collisions()</span> binds candy interactions to callback
+                                    hooks.</li>
+                                <li><span class="mono">create_rope()</span>, <span
+                                        class="mono">cut_rope_by_letter()</span>, and winch adjust APIs own topology
+                                    changes.</li>
+                            </ul>
+                            <p class="card-hook">Boundary: solver constraints and contact handling only.</p>
+                        </div>
+                        <div class="arch-card">
+                            <h4>src/entities.py</h4>
+                            <ul class="detail-list">
+                                <li>Each entity encapsulates local state, update behavior, and draw contract.</li>
+                                <li>Includes target swallow states, anchor variants, teleport pairs, and spider
+                                    behavior.</li>
+                            </ul>
+                            <p class="card-hook">Boundary: reusable gameplay objects with explicit responsibilities.</p>
+                        </div>
+                        <div class="arch-card">
+                            <h4>src/renderer.py + src/ui.py</h4>
+                            <ul class="detail-list">
+                                <li>Renderer owns virtual canvas scaling, particles, and background composition.</li>
+                                <li>UI screens (title/select/guide/custom) remain independent from physics internals.
+                                </li>
+                            </ul>
+                            <p class="card-hook">Boundary: presentation layer consumes state but does not author
+                                physics.</p>
+                        </div>
+                        <div class="arch-card data">
+                            <h4>src/levels.py + src/savedata.py</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">levels.py</span> defines campaign schemas and mechanic
+                                    combinations.</li>
+                                <li><span class="mono">savedata.py</span> encapsulates score stars, best times, and
+                                    custom level IO.</li>
+                            </ul>
+                            <p class="card-hook">Boundary: data contracts support fast content iteration.</p>
+                        </div>
+                    </div>
+                    <div class="arch-strip">
+                        <div class="strip-node">Input<span class="arrow">-></span></div>
+                        <div class="strip-node">Game Orchestrator<span class="arrow">-></span></div>
+                        <div class="strip-node">Physics + Entities<span class="arrow">-></span></div>
+                        <div class="strip-node">Renderer + UI</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="fixed-loop">
+                <h2>2) Fixed Timestep: Determinism for Puzzle Consistency</h2>
+                <div class="content">
+                    <div class="two-column-tight">
+                        <div class="code-panel">
+                            <h4>Core simulation rhythm</h4>
+                            <pre><code>accumulator += dt_render
+while accumulator >= dt_physics:
+    space.step(dt_physics)
+    accumulator -= dt_physics</code></pre>
+                            <ul class="detail-list">
+                                <li><span class="mono">PhysicsWorld.step(dt)</span> uses sub-steps from <span
+                                        class="mono">PHYSICS_STEPS</span>.</li>
+                                <li>Collision side effects run after stepping through the deferred action queue.</li>
+                            </ul>
+                            <p class="footline">In code: <span class="mono">PhysicsWorld.step(dt)</span> in <span
+                                    class="mono">src/physics.py</span> and frame loop from <span
+                                    class="mono">App.run()</span>.</p>
+                        </div>
+                        <div class="insight-panel">
+                            <h4>Why architecture cares</h4>
+                            <div class="mini-kpis">
+                                <div class="kpi-row"><strong>Determinism:</strong> same level solution remains reliable
+                                    across machine speed.</div>
+                                <div class="kpi-row"><strong>Stability:</strong> rope constraints are solved in
+                                    predictable sub-steps.</div>
+                                <div class="kpi-row"><strong>Fairness:</strong> timing challenges stay design-driven,
+                                    not frame-rate driven.</div>
+                                <div class="kpi-row"><strong>Tuning:</strong> <span class="mono">PHYSICS_STEPS</span> in
+                                    config controls precision-cost tradeoff.</div>
+                                <div class="kpi-row"><strong>Debugging:</strong> reproducible cut sequences simplify bug
+                                    isolation and balancing.</div>
+                                <div class="kpi-row"><strong>Balancing:</strong> gravity and rope constants remain
+                                    stable across hardware classes.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="event-collision-flow">
+                <h2>3) Event and Collision Routing Pipeline</h2>
+                <div class="content">
+                    <div class="flow-lanes">
+                        <div class="flow-lane route">
+                            <h4>Input route</h4>
+                            <p><span class="mono">run.py: App._handle_event()</span> dispatches by active screen, then
+                                <span class="mono">Game.handle_event()</span> handles rope cuts, slider drag, and winch
+                                controls.
+                            </p>
+                            <p class="lane-contract">Contract: UI states consume their own events; gameplay input
+                                executes only in <span class="mono">PLAYING</span>.</p>
+                        </div>
+                        <div class="flow-lane sim">
+                            <h4>Collision route</h4>
+                            <p><span class="mono">PhysicsWorld.setup_collisions()</span> binds candy collisions to
+                                callbacks, then queues safe actions after stepping.</p>
+                            <p class="lane-contract">Contract: no space mutation during <span
+                                    class="mono">space.step()</span>; only deferred callbacks mutate state.</p>
+                        </div>
+                        <div class="flow-lane state">
+                            <h4>State mutation</h4>
+                            <p>Callbacks trigger <span class="mono">_on_candy_target()</span>, <span
+                                    class="mono">_on_candy_spike()</span>, teleport handlers, and transition game state.
+                            </p>
+                            <p class="lane-contract">Contract: transition authority is centralized in game handlers, not
+                                distributed across rendering code.</p>
+                        </div>
+                        <div class="flow-lane fx">
+                            <h4>Feedback layer</h4>
+                            <p>Renderer receives resulting visual effects through particle bursts and animation
+                                triggers, keeping simulation and visuals decoupled.</p>
+                            <p class="lane-contract">Contract: visuals react to outcomes; they never define win/lose
+                                conditions.</p>
+                        </div>
+                    </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-warning-circle"></i></span>
+                        <span>Key architectural choice: deferred post-step actions prevent illegal physics-space
+                            mutation during active solver execution.</span>
+                    </div>
+                    <div class="ai-placeholder compact">
+                        <p class="ai-title">AI flowchart placeholder</p>
+                        <p class="ai-prompt">Prompt: Create a 16:9 horizontal flowchart for a Python Cut The Rope
+                            architecture with lanes Input Router, Game, PhysicsWorld, and Renderer. Show flow: user
+                            input -> App._handle_event -> Game.handle_event -> PhysicsWorld.step -> deferred collision
+                            callback -> GameState update -> particle and UI feedback. Use dark background, teal and
+                            green arrows, and clean labels.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="state-machines">
+                <h2>4) Layered State Machines</h2>
+                <div class="content">
+                    <div class="state-grid">
+                        <div class="state-card">
+                            <h4>Application screen state</h4>
+                            <div class="state-track">
+                                <span class="state-pill">title</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill">level_select</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill active">game</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill">guide/custom</span>
+                            </div>
+                            <ul class="detail-list">
+                                <li>Menu screens stay UI-only and avoid physics dependencies.</li>
+                                <li>Entering gameplay always instantiates a fresh <span class="mono">Game</span> object.
+                                </li>
+                            </ul>
+                            <p class="footline">Owner: <span class="mono">App.screen</span> in <span
+                                    class="mono">run.py</span>.</p>
+                        </div>
+                        <div class="state-card">
+                            <h4>Gameplay state</h4>
+                            <div class="state-track">
+                                <span class="state-pill active">PLAYING</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill">WON</span>
+                                <span class="state-arrow">or</span>
+                                <span class="state-pill">LOST</span>
+                            </div>
+                            <ul class="detail-list">
+                                <li>Collision callbacks and spider catches are the primary transition triggers.</li>
+                                <li><span class="mono">WON</span>/<span class="mono">LOST</span> freeze core interaction
+                                    and drive overlays.</li>
+                            </ul>
+                            <p class="footline">Owner: <span class="mono">GameState</span> in <span
+                                    class="mono">src/game.py</span>.</p>
+                        </div>
+                        <div class="state-card">
+                            <h4>Entity micro-state</h4>
+                            <div class="state-track">
+                                <span class="state-pill">STATE_IDLE</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill active">STATE_SWALLOWING</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill">STATE_DONE</span>
+                            </div>
+                            <ul class="detail-list">
+                                <li>Target swallow animation progresses by timer, independent of solver timing.</li>
+                                <li>Done state prevents duplicate collection reactions.</li>
+                            </ul>
+                            <p class="footline">Example: target animation state machine in <span
+                                    class="mono">src/entities.py</span>.</p>
+                        </div>
+                        <div class="state-card">
+                            <h4>Anchor behavior state</h4>
+                            <div class="state-track">
+                                <span class="state-pill">inactive</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill active">active</span>
+                                <span class="state-arrow">-></span>
+                                <span class="state-pill">cut/deactivate</span>
+                            </div>
+                            <ul class="detail-list">
+                                <li>Magnets activate by radius check and spawn rope topology dynamically.</li>
+                                <li>Winches retain <span class="mono">active</span> + <span
+                                        class="mono">current_length</span> for continuous adjustment.</li>
+                            </ul>
+                            <p class="footline">Magnets and winches act as small localized state machines.</p>
+                        </div>
+                    </div>
+                    <div class="ai-placeholder compact">
+                        <p class="ai-title">AI state diagram placeholder</p>
+                        <p class="ai-prompt">Prompt: Generate a polished layered state machine diagram in 16:9 showing
+                            three layers for this game: App screen states (title, level_select, game, guide/custom),
+                            GameState (PLAYING, WON, LOST), and entity states (Target idle/swallowing/done and anchor
+                            inactive/active/cut). Include cross-layer transition triggers like collisions, key input,
+                            and timers.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="data-break" class="section-break">
+                <div class="break-content">
+                    <h2>Data-Driven Core</h2>
+                    <p>Level schema, persistence, and creation tooling as architecture pillars.</p>
+                </div>
+            </section>
+
+            <section id="level-schema">
+                <h2>5) Data-Driven Levels and Entity Factory</h2>
+                <div class="content">
+                    <div class="schema-row">
+                        <div class="json-panel">
+                            <h4>Level schema (<span class="mono">src/levels.py</span>)</h4>
+                            <pre><code>{
+  "name": "Double Swing",
+  "candy": (360, 900),
+  "target": (200, 250, 30),
+  "anchors": [{"x":260,"y":1100,"letter":"A"}],
+  "spikes": [...],
+  "teleports": [...],
+  "spiders": [...]
+}</code></pre>
+                            <ul class="detail-list">
+                                <li>Each top-level key maps to one mechanic family and creation path.</li>
+                                <li>Schema keeps new level content decoupled from engine rewrites.</li>
+                            </ul>
+                        </div>
+                        <div class="factory-panel">
+                            <h4>Runtime translation (<span class="mono">Game._create_entities()</span>)</h4>
+                            <pre><code>for ad in level["anchors"]:
+    a = Anchor(...)
+    rd = physics.create_rope(...)
+
+for td in level["teleports"]:
+    tp = TeleportPair(...)
+
+for sd in level["spiders"]:
+    sp = Spider(...)</code></pre>
+                            <ul class="detail-list">
+                                <li>Factory loops instantiate objects, register physics bodies, and store rope
+                                    references.</li>
+                                <li>Missing optional keys get defaults before use to preserve runtime safety.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="inline-note warm">
+                        <span class="note-icon"><i class="ph-duotone ph-database"></i></span>
+                        <span>Architecture impact: content iteration happens through data edits, not engine
+                            rewrites; this is the core Lecture 4 data-driven pattern.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="persistence-tooling">
+                <h2>6) Persistence and Tooling Boundaries</h2>
+                <div class="content">
+                    <div class="tooling-grid">
+                        <div class="tool-card">
+                            <h4>Persistence API</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">save_level_score()</span> updates best-time records and star
+                                    outcomes.</li>
+                                <li><span class="mono">load_custom_levels()</span> and related APIs isolate file format
+                                    concerns.</li>
+                            </ul>
+                            <p class="card-hook">Single persistence boundary keeps gameplay logic storage-agnostic.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4>Authoring Tool</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">level_editor.py</span> enables mechanic placement and exportable
+                                    level data.</li>
+                                <li>Designers can iterate level intent without touching solver or renderer code.</li>
+                            </ul>
+                            <p class="card-hook">Tooling extends content pipeline without altering runtime architecture.
+                            </p>
+                        </div>
+                        <div class="tool-card">
+                            <h4>Validation Layer</h4>
+                            <ul class="detail-list">
+                                <li><span class="mono">validate_levels.py</span> checks bounds, overlap hazards, and
+                                    target safety.</li>
+                                <li>Acts as design-time guardrails before levels hit runtime execution.</li>
+                            </ul>
+                            <p class="card-hook">Early validation reduces unstable or unfair content states.</p>
+                        </div>
+                    </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-hard-drives"></i></span>
+                        <span>Separation of runtime and authoring concerns keeps the game loop lean and iteration speed
+                            high.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="rendering-boundary">
+                <h2>7) Rendering Boundary vs Simulation Boundary</h2>
+                <div class="content">
+                    <div class="renderer-split">
+                        <div class="stack-panel">
+                            <h4>Simulation side</h4>
+                            <ul class="stack-list">
+                                <li class="gold">Pymunk world in <span class="mono">PhysicsWorld</span> is the
+                                    authoritative source of motion and collisions.</li>
+                                <li class="gold">Game logic mutates state and constraints through explicit APIs only.
+                                </li>
+                                <li class="gold">Coordinate conversion utilities bridge Pymunk and pygame spaces.</li>
+                                <li class="gold">Deferred post-step actions isolate side effects from solver lock
+                                    phases.</li>
+                            </ul>
+                        </div>
+                        <div class="stack-panel">
+                            <h4>Presentation side</h4>
+                            <ul class="stack-list">
+                                <li class="green"><span class="mono">Renderer</span> owns virtual canvas scaling and
+                                    background composition.</li>
+                                <li class="green"><span class="mono">ParticleSystem</span> and <span
+                                        class="mono">StarField</span> provide non-authoritative visual feedback.</li>
+                                <li class="green">UI screens are independent views over game progress and save data.
+                                </li>
+                                <li class="green"><span class="mono">window_to_virtual()</span> keeps input mapping
+                                    stable on resize.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="footline">Result: visual polish can evolve without destabilizing gameplay physics
+                        behavior.</p>
+                </div>
+            </section>
+
+            <section id="architecture-summary">
+                <h2>8) Lecture 4 Recap: Patterns Used in This Game</h2>
+                <div class="content">
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <h4>Layered architecture</h4>
+                            <ul class="detail-list">
+                                <li>Runtime shell, gameplay orchestration, simulation, and rendering are separated.</li>
+                                <li>Each layer can evolve with minimal cross-module regression risk.</li>
+                            </ul>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Event-driven design</h4>
+                            <ul class="detail-list">
+                                <li>Input and collisions route through explicit handler boundaries.</li>
+                                <li>Deferred callback execution protects physics consistency.</li>
+                            </ul>
+                        </div>
+                        <div class="summary-card">
+                            <h4>State machine modeling</h4>
+                            <ul class="detail-list">
+                                <li>Screen, game, and entity states each own local transition rules.</li>
+                                <li>Centralized transitions prevent circular logic and hidden side effects.</li>
+                            </ul>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Data-driven extensibility</h4>
+                            <ul class="detail-list">
+                                <li>Schema-based levels and tooling scale content throughput.</li>
+                                <li>Persistence contracts stabilize progression without engine rewrites.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="ai-placeholder compact">
+                        <p class="ai-title">AI architecture poster placeholder</p>
+                        <p class="ai-prompt">Prompt: Create a one-slide architecture infographic for this Cut The Rope
+                            project with four quadrants: layered architecture, event-driven callbacks, state machines,
+                            and data-driven extensibility. Add icons, concise labels, and dependency arrows. Dark
+                            glassmorphism style, high contrast, and 16:9 composition.</p>
+                    </div>
+                    <div class="inline-note warm tight">
+                        <span class="note-icon"><i class="ph-duotone ph-check-circle"></i></span>
+                        <span>Lecture 4 takeaway: architecture is what makes both gameplay quality and development
+                            velocity sustainable.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="end">
+                <div class="end-content">
+                    <div class="end-icon"><i class="ph-duotone ph-tree-structure"></i></div>
+                    <h2>Architecture done. Next: optimization and testing.</h2>
+                    <p class="end-subtitle">Cut The Rope - Lecture 4 deck focused on module design, flow safety, and
+                        data-driven iteration.</p>
+                    <div class="end-tags">
+                        <span class="end-tag">Layers</span>
+                        <span class="end-tag">Determinism</span>
+                        <span class="end-tag">Callbacks</span>
+                        <span class="end-tag">State Machines</span>
+                        <span class="end-tag">Persistence</span>
+                        <span class="end-tag">Tooling</span>
+                    </div>
+                    <p class="end-footnote">Built from this project codebase: run.py, src/game.py, src/physics.py,
+                        src/levels.py, src/savedata.py, src/renderer.py.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: false,
+            progress: false,
+            slideNumber: true,
+            hash: false,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            center: true,
+            width: 1280,
+            height: 720,
+            backgroundTransition: 'fade',
+            overview: false,
+            keyboard: true
+        });
+    </script>
+</body>
+
+</html>
