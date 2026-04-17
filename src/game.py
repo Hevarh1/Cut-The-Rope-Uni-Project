@@ -11,48 +11,25 @@ Integrates physics, entities, rendering, and input handling for:
   - Spikes (instant lose)
 """
 
-import math
-import time as _time
 import pygame
 import pymunk
 
 from .config import (
-    WIDTH, HEIGHT, PYMUNK_HEIGHT, FPS,
-    COLOR_PARTICLE_CUT, COLOR_PARTICLE_SUCCESS, COLOR_PARTICLE_STAR,
-    WINCH_MIN_LENGTH, WINCH_MAX_LENGTH,
+    WIDTH,
+    COLOR_PARTICLE_SUCCESS,
     FONT_FAMILY, FONT_SIZE_SMALL, FONT_SIZE_NORMAL,
-    COLOR_TEXT, COLOR_TEXT_SHADOW, COLOR_TEXT_HIGHLIGHT,
-    ROPE_SEGMENT_LENGTH,
 )
 from .entities import (
     Candy, Target, Anchor, MagnetAnchor, SliderAnchor, WinchAnchor,
-    Platform, Spike, TeleportPair, Spider, draw_rope,
+    Platform, Spike, TeleportPair, Spider,
 )
+from .game_renderer import draw_game_frame
+from .input_handler import InputHandler
 from .physics import PhysicsWorld
 from .renderer import Renderer
-from .utils import pymunk_to_pygame, pygame_to_pymunk, distance, clamp
-from .savedata import save_level_score, get_star_times
-
-
-def _draw_star_shape(surface, cx, cy, size, filled=True):
-    """Draw a 5-pointed star centered at (cx, cy)."""
-    points = []
-    for i in range(10):
-        angle = math.pi / 2 + i * math.pi / 5
-        r = size if i % 2 == 0 else size * 0.4
-        points.append((cx + r * math.cos(angle), cy - r * math.sin(angle)))
-    if filled:
-        pygame.draw.polygon(surface, (255, 220, 50), points)
-        pygame.draw.polygon(surface, (200, 170, 30), points, 2)
-    else:
-        pygame.draw.polygon(surface, (80, 80, 80), points)
-        pygame.draw.polygon(surface, (120, 120, 120), points, 2)
-
-
-class GameState:
-    PLAYING = "playing"
-    WON = "won"
-    LOST = "lost"
+from .types import GameState
+from .utils import pymunk_to_pygame, distance
+from .savedata import save_level_score
 
 
 class Game:
@@ -84,10 +61,7 @@ class Game:
         )
 
         # Input state
-        self._mouse_down = False
-        self._mouse_pos = (0, 0)
-        self._mouse_pymunk = (0.0, 0.0)
-        self._dragging_slider = None
+        self.input_handler = InputHandler()
 
         # HUD font
         try:
@@ -259,87 +233,8 @@ class Game:
 
     def handle_event(self, event: pygame.event.Event, scale: float,
                      dest_rect: pygame.Rect):
-        if self.state != GameState.PLAYING:
-            return
-
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self._mouse_down = True
-            vpos = self.renderer.window_to_virtual(event.pos, scale, dest_rect)
-            self._mouse_pos = vpos
-            self._mouse_pymunk = pygame_to_pymunk(vpos)
-            self.renderer.update_trail(vpos)
-
-            # Check slider drag start
-            for sl in self.sliders:
-                if sl.start_drag(self._mouse_pymunk):
-                    self._dragging_slider = sl
-                    break
-
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self._mouse_down = False
-            self.renderer.clear_trail()
-            if self._dragging_slider:
-                self._dragging_slider.end_drag()
-                self._dragging_slider = None
-
-        elif event.type == pygame.MOUSEMOTION:
-            vpos = self.renderer.window_to_virtual(event.pos, scale, dest_rect)
-            self._mouse_pos = vpos
-            self._mouse_pymunk = pygame_to_pymunk(vpos)
-
-            if self._mouse_down:
-                self.renderer.update_trail(vpos)
-
-            # Slider dragging
-            if self._dragging_slider:
-                self._dragging_slider.update_drag(self._mouse_pymunk)
-
-        elif event.type == pygame.KEYDOWN:
-            self._handle_key(event)
-
-    def _handle_key(self, event):
-        """Handle letter-key cutting + winch extend/retract."""
-        key_name = pygame.key.name(event.key).upper()
-
-        # Only handle single letter keys A-Z
-        if len(key_name) != 1 or not key_name.isalpha():
-            return
-
-        mods = pygame.key.get_mods()
-        shift = mods & pygame.KMOD_SHIFT
-        ctrl = mods & (pygame.KMOD_CTRL | pygame.KMOD_META)
-
-        # Check winch anchors first for Shift/Ctrl + letter
-        for w in self.winches:
-            if w.letter == key_name and w.active:
-                if shift:
-                    return  # Retract handled continuously in update
-                elif ctrl:
-                    return  # Extend handled continuously in update
-                else:
-                    # Plain letter = cut the winch rope
-                    self._cut_by_letter(key_name)
-                    w.active = False
-                    return
-
-        # Plain letter = cut rope
-        self._cut_by_letter(key_name)
-
-    def _cut_by_letter(self, letter: str):
-        """Cut rope by letter and emit particles."""
-        rd = self.physics.cut_rope_by_letter(letter)
-        if rd:
-            if rd in self.rope_datas:
-                self.rope_datas.remove(rd)
-            # Particles at anchor position
-            if rd.anchor_body:
-                px, py = pymunk_to_pygame(rd.anchor_body.position)
-                self.renderer.particle_system.emit(
-                    px, py, COLOR_PARTICLE_CUT, count=15, speed=150)
-            # Deactivate magnet anchors with this letter
-            for m in self.magnets:
-                if m.letter == letter.upper() and m.state == "active":
-                    m.deactivate()
+        """Delegate input handling to InputHandler."""
+        self.input_handler.handle_event(self, event, scale, dest_rect)
 
     # -- update --------------------------------------------------------
 
@@ -430,154 +325,5 @@ class Game:
     # -- draw ----------------------------------------------------------
 
     def draw(self, window_surface: pygame.Surface) -> tuple:
-        """Draw everything. Returns (scale, dest_rect) for input mapping."""
-        surf = self.renderer.virtual_surface
-        self.renderer.begin_frame()
-
-        t = self.time_elapsed
-
-        # Platforms
-        for p in self.platforms:
-            p.draw(surf, t)
-
-        # Spikes
-        for s in self.spikes_list:
-            s.draw(surf, t)
-
-        # Teleports
-        for tp in self.teleports:
-            tp.draw(surf, t)
-
-        # Ropes
-        for rd in self.rope_datas:
-            bodies = self.physics.get_rope_bodies_with_endpoints(rd, self.candy.body)
-            draw_rope(surf, bodies, time=t)
-
-        # Anchors
-        for a in self.anchors:
-            a.draw(surf, t)
-        for m in self.magnets:
-            m.draw(surf, t)
-        for sl in self.sliders:
-            sl.draw(surf, t)
-        for w in self.winches:
-            w.draw(surf, t)
-
-        # Spiders
-        for sp in self.spiders:
-            sp.draw(surf, t)
-
-        # Target
-        self.target.draw(surf, t)
-
-        # Candy (hidden during/after swallow - target draws it)
-        if not self.target.collected:
-            self.candy.draw(surf, t)
-
-        # HUD
-        self._draw_hud(surf)
-
-        # Win/Lose overlay
-        if self.state == GameState.WON:
-            self._draw_win_overlay(surf)
-        elif self.state == GameState.LOST:
-            self._draw_lose_overlay(surf)
-
-        return self.renderer.end_frame(window_surface)
-
-    def _draw_hud(self, surface):
-        """Draw time and controls info."""
-        # Time
-        t_str = f"Time: {self.time_elapsed:.1f}s"
-        txt = self._font_sm.render(t_str, True, COLOR_TEXT)
-        shadow = self._font_sm.render(t_str, True, COLOR_TEXT_SHADOW)
-        surface.blit(shadow, (16, 16))
-        surface.blit(txt, (15, 15))
-
-        # Level name
-        name = self.level_data.get("name", f"Level {self.level_index + 1}")
-        ntxt = self._font_sm.render(name, True, COLOR_TEXT)
-        surface.blit(ntxt, (WIDTH - ntxt.get_width() - 15, 15))
-
-        # Controls hints at bottom
-        hints = []
-        letters_used = set()
-        for a in self.anchors:
-            if a.letter and a.active:
-                letters_used.add(a.letter)
-        for rd in self.rope_datas:
-            if rd.letter:
-                letters_used.add(rd.letter)
-        for w in self.winches:
-            if w.letter and w.active:
-                hints.append(f"Shift+{w.letter}=Retract  Ctrl+{w.letter}=Extend  {w.letter}=Cut")
-        for sl in self.sliders:
-            if sl.letter:
-                hints.append(f"Drag {sl.letter} slider  {sl.letter}=Cut")
-
-        # Show cut keys
-        cut_letters = sorted(letters_used)
-        if cut_letters and not hints:
-            hints.append("Press " + "/".join(cut_letters) + " to cut rope")
-        if self.sliders:
-            hints.append("Click+drag slider handle to move")
-
-        y = HEIGHT - 20
-        for h in reversed(hints):
-            htxt = self._font_sm.render(h, True, (*COLOR_TEXT[:3],))
-            surface.blit(htxt, (WIDTH // 2 - htxt.get_width() // 2, y - htxt.get_height()))
-            y -= htxt.get_height() + 4
-
-    def _draw_win_overlay(self, surface):
-        alpha = min(1.0, self.win_timer * 2)
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, int(120 * alpha)))
-        surface.blit(overlay, (0, 0))
-
-        txt = self._font_md.render("Level Complete!", True, COLOR_PARTICLE_SUCCESS)
-        tw, th = txt.get_size()
-        surface.blit(txt, (WIDTH // 2 - tw // 2, HEIGHT // 2 - 100))
-
-        t_str = f"Time: {self.time_elapsed:.2f}s"
-        ttxt = self._font_sm.render(t_str, True, COLOR_TEXT)
-        surface.blit(ttxt, (WIDTH // 2 - ttxt.get_width() // 2, HEIGHT // 2 - 50))
-
-        # Star rating – use level_data star_times first (works for custom levels too)
-        st = self.level_data.get("star_times") or get_star_times(self.level_index)
-        if st and len(st) >= 3:
-            stars_earned = 3 if self.time_elapsed <= st[0] else (2 if self.time_elapsed <= st[1] else 1)
-        else:
-            stars_earned = 1
-        star_y = HEIGHT // 2 - 5
-        star_size = 24
-        gap = 60
-        start_x = WIDTH // 2 - gap
-        for i in range(3):
-            sx = start_x + i * gap
-            filled = i < stars_earned
-            _draw_star_shape(surface, sx, star_y, star_size, filled)
-
-        # Star time thresholds
-        if st and len(st) >= 3:
-            info = f"★★★ < {st[0]}s   ★★ < {st[1]}s   ★ < {st[2]}s"
-            itxt = self._font_sm.render(info, True, (180, 180, 140))
-            surface.blit(itxt, (WIDTH // 2 - itxt.get_width() // 2, star_y + 35))
-
-        if self.win_timer > 1.0:
-            hint = self._font_sm.render("SPACE = Next  |  R = Retry  |  ESC = Menu",
-                                        True, COLOR_TEXT)
-            surface.blit(hint, (WIDTH // 2 - hint.get_width() // 2, star_y + 70))
-
-    def _draw_lose_overlay(self, surface):
-        alpha = min(1.0, self.lose_timer * 2)
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, int(120 * alpha)))
-        surface.blit(overlay, (0, 0))
-
-        txt = self._font_md.render(self.lose_reason or "Level Failed!", True, (255, 100, 100))
-        tw, th = txt.get_size()
-        surface.blit(txt, (WIDTH // 2 - tw // 2, HEIGHT // 2 - 40))
-
-        if self.lose_timer > 1.0:
-            hint = self._font_sm.render("Press R to retry  |  ESC for menu", True, COLOR_TEXT)
-            surface.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT // 2 + 20))
+        """Draw everything. Delegates to game_renderer."""
+        return draw_game_frame(self, window_surface)

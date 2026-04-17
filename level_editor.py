@@ -977,7 +977,8 @@ class LevelEditor:
                 level_data[key] = []
 
         try:
-            from src.game import Game, GameState
+            from src.game import Game
+            from src.types import GameState
         except ImportError as e:
             self._toast(f"Cannot import game: {e}")
             return

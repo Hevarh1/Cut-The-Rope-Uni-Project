@@ -13,10 +13,10 @@ import pygame
 
 from src.config import WIDTH, HEIGHT, FPS, GAME_TITLE
 from src.ui import TitleScreen, LevelSelect, GuideScreen, CustomLevelScreen
-from src.game import Game, GameState
+from src.game import Game
+from src.types import GameState
 from src.levels import get_level, total_levels
 from src.savedata import load_custom_levels
-from src.renderer import Renderer
 
 
 class App:
