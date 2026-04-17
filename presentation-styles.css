@@ -282,7 +282,7 @@
 }
 
 .highlight-rope {
-    background: linear-gradient(135deg, var(--coral), var(--gold), var(--coral));
+    background: var(--coral);
     background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

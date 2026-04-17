@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture 4 — Project Architecture (Cut The Rope)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <link rel="stylesheet" href="presentation-styles.css">
+    <style>
+        /* Architecture presentation overrides */
+        .architecture-deck .reveal { font-size: 14pt; }
+        .architecture-deck .reveal .slides section { padding: 30px 46px; }
+        .architecture-deck .reveal .slides section .content { gap: 14px; }
+        .architecture-deck .reveal h1 { font-size: 48pt; }
+        .architecture-deck .reveal h2 { font-size: 28pt; margin-bottom: 16px; }
+        .architecture-deck .reveal h3 { font-size: 16pt; margin-bottom: 8px; }
+        .architecture-deck .reveal h4 { font-size: 13pt; }
+        .architecture-deck .reveal p, .architecture-deck .reveal li { font-size: 12.5pt; line-height: 1.45; }
+        .architecture-deck .tagline { font-size: 14pt !important; margin-bottom: 20px !important; }
+        .architecture-deck .credit-card { min-width: 240px; padding: 18px 22px; }
+        .architecture-deck .credit-label { font-size: 9pt !important; }
+        .architecture-deck .credit-name { font-size: 11pt !important; margin: 2px 0 !important; }
+        .architecture-deck .section-break h2 { font-size: 48pt; }
+        .architecture-deck .section-break p { font-size: 14pt; }
+        .architecture-deck .mono { font-family: 'JetBrains Mono', monospace; font-size: 10pt; color: var(--text-bright); }
+
+        /* CRC Card styling */
+        .crc-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            width: 100%;
+        }
+        .crc-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .crc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(0,0,0,.25);
+        }
+        .crc-header {
+            padding: 10px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11pt;
+            font-weight: 600;
+            color: var(--bg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .crc-header i { font-size: 14px; }
+        .crc-header.green { background: var(--green); }
+        .crc-header.coral { background: var(--coral); }
+        .crc-header.gold { background: var(--gold); }
+        .crc-header.blue { background: var(--blue); }
+        .crc-header.teal { background: var(--teal); }
+        .crc-header.purple { background: var(--purple); }
+        .crc-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            flex: 1;
+        }
+        .crc-col {
+            padding: 10px 14px;
+        }
+        .crc-col:first-child {
+            border-right: 1px solid var(--border);
+        }
+        .crc-col-label {
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .crc-col ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .crc-col li {
+            font-size: 9.5pt;
+            line-height: 1.35;
+            color: var(--text);
+            padding-left: 10px;
+            position: relative;
+            margin-bottom: 4px;
+        }
+        .crc-col li::before {
+            content: '\2022';
+            position: absolute;
+            left: 0;
+            color: var(--green);
+        }
+
+        /* Module flow strip */
+        .module-strip {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .module-node {
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 10px 6px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9pt;
+            color: var(--text);
+            position: relative;
+            backdrop-filter: blur(8px);
+        }
+        .module-node .arrow {
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--green);
+            font-size: 10pt;
+            z-index: 1;
+        }
+
+        /* Relationship graph */
+        .relation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            width: 100%;
+        }
+        .relation-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .relation-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(0,0,0,.25);
+        }
+        .relation-card h4 { margin-bottom: 8px; }
+        .relation-card ul { list-style: none; padding: 0; margin: 0; }
+        .relation-card li {
+            font-size: 10.5pt;
+            color: var(--text);
+            padding-left: 14px;
+            position: relative;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .relation-card li::before {
+            content: '\2192';
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: 600;
+        }
+        .relation-edge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5pt;
+            color: var(--text-dim);
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Activity diagram (CSS-based flowchart) */
+        .activity-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+            align-items: center;
+        }
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 20px;
+            text-align: center;
+            font-size: 10.5pt;
+            color: var(--text);
+            min-width: 260px;
+            backdrop-filter: blur(8px);
+        }
+        .flow-step.highlight {
+            border-color: var(--green);
+            color: var(--text-bright);
+        }
+        .flow-arrow {
+            color: var(--green);
+            font-size: 14pt;
+            line-height: 1;
+        }
+        .flow-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        .flow-row .flow-step { min-width: 180px; }
+        .flow-guard {
+            font-size: 9pt;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold);
+            text-align: center;
+        }
+
+        /* Cycle diagram */
+        .cycle-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            width: 100%;
+            align-items: stretch;
+        }
+        .cycle-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+        .cycle-card h4 { margin-bottom: 8px; }
+        .cycle-card pre {
+            margin: 4px 0 0 0;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,107,107,.25);
+            background: rgba(15,10,12,.9);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9pt;
+            line-height: 1.4;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+        .cycle-card.fixed pre {
+            border-color: rgba(80,220,140,.25);
+        }
+        .cycle-label {
+            display: inline-block;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+        .cycle-label.bad { background: rgba(255,107,107,.15); color: var(--coral); }
+        .cycle-label.good { background: rgba(80,220,140,.15); color: var(--green); }
+
+        /* App structure tree */
+        .structure-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+            align-items: center;
+        }
+        .tree-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .tree-node {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 18px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            min-width: 120px;
+        }
+        .tree-node.root {
+            border-color: var(--coral);
+            background: rgba(255,107,107,.08);
+        }
+        .tree-node h4 { margin: 0 0 2px 0; font-size: 11pt; }
+        .tree-node p { margin: 0; font-size: 9pt; color: var(--text-dim); }
+        .tree-connector {
+            width: 2px;
+            height: 14px;
+            background: var(--border-accent);
+        }
+        .tree-line {
+            width: 60%;
+            height: 2px;
+            background: var(--border-accent);
+            margin: 0 auto;
+        }
+        .tree-label {
+            font-size: 8pt;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* Takeaway styling */
+        .arch-takeaway {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        .arch-take-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 18px;
+            text-align: left;
+            backdrop-filter: blur(8px);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .arch-take-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(0,0,0,.2);
+        }
+        .arch-take-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--green);
+            line-height: 1;
+            flex-shrink: 0;
+            min-width: 36px;
+            text-align: center;
+        }
+        .arch-take-item h4 { font-size: 14pt; color: var(--text-bright); margin-bottom: 2px; }
+        .arch-take-item p { font-size: 11.5pt; color: var(--text-dim); margin: 0; line-height: 1.5; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .crc-grid, .relation-grid, .cycle-layout { grid-template-columns: 1fr; }
+            .module-strip { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+
+<body class="architecture-deck">
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- ========== SLIDE 1: TITLE ========== -->
+            <section id="title">
+                <div class="title-content">
+                    <div class="scissors-icon"><i class="ph-duotone ph-tree-structure"></i></div>
+                    <h1>Project <span class="highlight-rope">Architecture</span></h1>
+                    <p class="tagline">How we designed, divided, and connected our Cut The Rope modules.</p>
+                    <div class="credit-row">
+                        <div class="credit-card">
+                            <p class="credit-label">Team</p>
+                            <p class="credit-name">Muhammad Yaseen</p>
+                            <p class="credit-name">Hevar Hemin</p>
+                            <p class="credit-name">Revar Azim</p>
+                        </div>
+                        <div class="credit-card">
+                            <p class="credit-label">Supervised by</p>
+                            <p class="credit-name accent">Mrs. Rina D. Zarro</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 2: LECTURE OVERVIEW ========== -->
+            <section id="overview">
+                <h2>What This Lecture Covers</h2>
+                <div class="content">
+                    <p class="subtext">Lecture 4 teaches us how to design software architecture before writing code. Here are the key concepts we applied:</p>
+                    <div class="checklist-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-squares-four"></i></div>
+                            <h4>Module Identification</h4>
+                            <p>Break the game into logical subsystems with hidden implementations and clear APIs.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-cards"></i></div>
+                            <h4>CRC Cards</h4>
+                            <p>Class-Responsibility-Collaboration cards define what each module does and who it talks to.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-graph"></i></div>
+                            <h4>Relationship Graphs</h4>
+                            <p>Visualize which modules depend on each other and in what direction.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-flow-arrow"></i></div>
+                            <h4>Activity Diagrams</h4>
+                            <p>Map out the program's workflow &mdash; the update loop, decisions, and parallel paths.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-arrow-u-up-right"></i></div>
+                            <h4>Avoid Cyclic Dependencies</h4>
+                            <p>Prevent modules from referencing each other in circles &mdash; break them with controllers.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-users-three"></i></div>
+                            <h4>Team Division</h4>
+                            <p>Each programmer owns a module and collaborates on shared APIs at the edges.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 3: ROLE OF LEAD PROGRAMMER ========== -->
+            <section id="lead-role">
+                <h2>Role of the Lead Programmer</h2>
+                <div class="content">
+                    <div class="split">
+                        <div class="split-main">
+                            <p class="lead">The lecture says: someone must make high-level architecture decisions before anyone writes code.</p>
+                            <ul class="styled-list">
+                                <li><strong>Split classes</strong> into modules with clear boundaries</li>
+                                <li><strong>Choose computation model</strong> &mdash; fixed timestep physics loop</li>
+                                <li><strong>Define data files</strong> &mdash; level schemas in <span class="mono">levels.py</span></li>
+                                <li><strong>Select libraries</strong> &mdash; Pygame for rendering, Pymunk for physics</li>
+                            </ul>
+                            <div class="inline-note warm">
+                                <span class="note-icon"><i class="ph-duotone ph-lightbulb"></i></span>
+                                <span>We agreed on modules and APIs <strong>first</strong>, then divided the work. This prevented duplicate code and missing features.</span>
+                            </div>
+                        </div>
+                        <div class="split-side">
+                            <h3>Our team split</h3>
+                            <div class="progression-list">
+                                <div class="prog-item"><span class="prog-num">1</span> Physics engine &amp; rope system</div>
+                                <div class="prog-item"><span class="prog-num">2</span> Entities, levels &amp; save data</div>
+                                <div class="prog-item"><span class="prog-num">3</span> Renderer, UI &amp; game loop</div>
+                            </div>
+                            <p style="margin-top: 10px; font-size: 13px; color: var(--text-dim);">Each owner had final say on their module's implementation. We held <strong>interface parties</strong> to agree on shared APIs.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 4: MODULE IDENTIFICATION ========== -->
+            <section id="modules">
+                <h2>Our Module Breakdown</h2>
+                <div class="content">
+                    <p class="subtext">We identified six logical subsystems. Each hides its implementation behind an API that the rest of the game uses.</p>
+                    <div class="crc-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="relation-card" style="border-left: 3px solid var(--coral);">
+                            <h4><i class="ph-duotone ph-terminal" style="color:var(--coral);"></i> App Shell</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">run.py</p>
+                            <ul>
+                                <li>Frame cadence &amp; event routing</li>
+                                <li>Screen state management</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid var(--green);">
+                            <h4><i class="ph-duotone ph-game-controller" style="color:var(--green);"></i> Game Orchestrator</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/game.py</p>
+                            <ul>
+                                <li>Entity creation &amp; level lifecycle</li>
+                                <li>Input handling &amp; state transitions</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid var(--gold);">
+                            <h4><i class="ph-duotone ph-atom" style="color:var(--gold);"></i> Physics Engine</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/physics.py</p>
+                            <ul>
+                                <li>Rope creation &amp; cutting</li>
+                                <li>Collision detection &amp; callbacks</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid var(--blue);">
+                            <h4><i class="ph-duotone ph-cube" style="color:var(--blue);"></i> Entities</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/entities.py</p>
+                            <ul>
+                                <li>Candy, Target, Anchors, Spikes</li>
+                                <li>Teleports, Spiders, Platforms</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid var(--teal);">
+                            <h4><i class="ph-duotone ph-paint-brush" style="color:var(--teal);"></i> Renderer + UI</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/renderer.py, src/ui.py</p>
+                            <ul>
+                                <li>Virtual canvas &amp; particles</li>
+                                <li>Menu screens &amp; HUD</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid var(--purple);">
+                            <h4><i class="ph-duotone ph-database" style="color:var(--purple);"></i> Data Layer</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/levels.py, src/savedata.py</p>
+                            <ul>
+                                <li>Level schemas &amp; definitions</li>
+                                <li>Score persistence &amp; custom levels</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 5: RELATIONSHIP GRAPH ========== -->
+            <section id="relationship-graph">
+                <h2>Module Relationship Graph</h2>
+                <div class="content">
+                    <p class="subtext">Edges show dependency: Module A needs Module B's API. Lower layers don't know about upper layers.</p>
+                    <div class="activity-flow" style="gap: 4px;">
+                        <div class="flow-step" style="border-color: var(--coral); min-width: 320px;">
+                            <strong style="color:var(--coral);">run.py</strong> &mdash; App Shell
+                        </div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-step" style="border-color: var(--green); min-width: 320px;">
+                            <strong style="color:var(--green);">game.py</strong> &mdash; Game Orchestrator
+                        </div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-row" style="gap: 14px;">
+                            <div class="flow-step" style="border-color: var(--gold);">
+                                <strong style="color:var(--gold);">physics.py</strong>
+                            </div>
+                            <div class="flow-step" style="border-color: var(--blue);">
+                                <strong style="color:var(--blue);">entities.py</strong>
+                            </div>
+                        </div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-row" style="gap: 14px;">
+                            <div class="flow-step" style="border-color: var(--teal);">
+                                <strong style="color:var(--teal);">renderer.py + ui.py</strong>
+                            </div>
+                            <div class="flow-step" style="border-color: var(--purple);">
+                                <strong style="color:var(--purple);">levels.py + savedata.py</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
+                        <span>Key rule: <strong>lower modules never import upper modules.</strong> The renderer doesn't know about game logic. Physics doesn't know about UI.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 6: CRC CARDS — APP + GAME ========== -->
+            <section id="crc-core">
+                <h2>CRC Cards: Core Modules</h2>
+                <div class="content">
+                    <p class="subtext">Class-Responsibility-Collaboration cards for our two top-level modules.</p>
+                    <div class="crc-grid">
+                        <div class="crc-card">
+                            <div class="crc-header coral"><i class="ph-duotone ph-terminal"></i> run.py (App Shell)</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Clamp delta time &amp; own frame cadence</li>
+                                        <li>Route input events by active screen</li>
+                                        <li>Manage screen transitions</li>
+                                        <li>Instantiate fresh Game per level</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>game.py (creates &amp; calls update)</li>
+                                        <li>ui.py (renders screens)</li>
+                                        <li>levels.py (loads level data)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="crc-card">
+                            <div class="crc-header green"><i class="ph-duotone ph-game-controller"></i> game.py (Game)</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Build entities from level schema</li>
+                                        <li>Orchestrate update order</li>
+                                        <li>Handle rope cuts &amp; winch input</li>
+                                        <li>Manage PLAYING / WON / LOST states</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>physics.py (creates bodies &amp; ropes)</li>
+                                        <li>entities.py (instantiates objects)</li>
+                                        <li>renderer.py (hands off draw calls)</li>
+                                        <li>savedata.py (records scores)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-note warm">
+                        <span class="note-icon"><i class="ph-duotone ph-lightbulb"></i></span>
+                        <span><strong>Boundary rule:</strong> run.py never touches physics internals. game.py never draws anything. Each card's responsibilities are self-contained.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 7: CRC CARDS — PHYSICS + ENTITIES ========== -->
+            <section id="crc-engine">
+                <h2>CRC Cards: Engine Layer</h2>
+                <div class="content">
+                    <p class="subtext">The simulation layer — physics handles the math, entities define gameplay objects.</p>
+                    <div class="crc-grid">
+                        <div class="crc-card">
+                            <div class="crc-header gold"><i class="ph-duotone ph-atom"></i> physics.py (PhysicsWorld)</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Create rope chains with PinJoints</li>
+                                        <li>Cut ropes by removing joints</li>
+                                        <li>Detect collisions &amp; queue callbacks</li>
+                                        <li>Winch length adjustment API</li>
+                                        <li>Step simulation with sub-steps</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>Pymunk library (delegated solver)</li>
+                                        <li>game.py (collision callbacks)</li>
+                                        <li>entities.py (body references)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="crc-card">
+                            <div class="crc-header blue"><i class="ph-duotone ph-cube"></i> entities.py</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Candy: dynamic body + squash/stretch</li>
+                                        <li>Target: sensor + swallow animation</li>
+                                        <li>Anchor variants: static, magnet, slider, winch</li>
+                                        <li>Hazards: spike, teleport, spider</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>physics.py (registers bodies)</li>
+                                        <li>renderer.py (provides draw data)</li>
+                                        <li>config.py (reads constants)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 8: CRC CARDS — RENDERING + DATA ========== -->
+            <section id="crc-presentation">
+                <h2>CRC Cards: Presentation &amp; Data</h2>
+                <div class="content">
+                    <div class="crc-grid">
+                        <div class="crc-card">
+                            <div class="crc-header teal"><i class="ph-duotone ph-paint-brush"></i> renderer.py + ui.py</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Virtual canvas scaling (720&times;1280)</li>
+                                        <li>Background, starfield, particles</li>
+                                        <li>Title, select, guide, custom screens</li>
+                                        <li>Mouse trail &amp; visual feedback</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>game.py (receives state to render)</li>
+                                        <li>entities.py (reads positions)</li>
+                                        <li>savedata.py (displays progress)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="crc-card">
+                            <div class="crc-header purple"><i class="ph-duotone ph-database"></i> levels.py + savedata.py</div>
+                            <div class="crc-body">
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Responsibilities</div>
+                                    <ul>
+                                        <li>Define campaign level schemas</li>
+                                        <li>Save/load best times &amp; star ratings</li>
+                                        <li>Import/export custom levels</li>
+                                        <li>JSON persistence to data/ folder</li>
+                                    </ul>
+                                </div>
+                                <div class="crc-col">
+                                    <div class="crc-col-label">Collaborations</div>
+                                    <ul>
+                                        <li>game.py (provides level data)</li>
+                                        <li>ui.py (provides progress data)</li>
+                                        <li>level_editor.py (creates data)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
+                        <span><strong>Renderer boundary:</strong> visuals react to outcomes but never define win/lose conditions. Data modules are storage-agnostic from gameplay logic.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 9: ACTIVITY DIAGRAM ========== -->
+            <section id="activity-diagram">
+                <h2>Activity Diagram: Game Loop</h2>
+                <div class="content">
+                    <p class="subtext">This is our main loop &mdash; one iteration per frame. Each action maps to a module's responsibility.</p>
+                    <div class="activity-flow" style="gap: 3px;">
+                        <div class="flow-step highlight"><strong>Get Input</strong> &mdash; <span class="mono">App._handle_event()</span></div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-step highlight"><strong>Route by Screen State</strong> &mdash; title / select / game?</div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-guard">[if PLAYING]</div>
+                        <div class="flow-row" style="gap: 10px;">
+                            <div class="flow-step">Handle rope cuts<br><span class="mono">Game.handle_event()</span></div>
+                            <div class="flow-step">Process mechanics<br>magnets, winches</div>
+                        </div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-step highlight"><strong>Step Physics</strong> &mdash; <span class="mono">PhysicsWorld.step(dt)</span></div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-step">Deferred collision callbacks<br><span style="font-size:9pt; color:var(--text-dim);">target hit / spike hit / teleport</span></div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-row" style="gap: 10px;">
+                            <div class="flow-step highlight"><strong>Update Particles</strong></div>
+                            <div class="flow-step highlight"><strong>Draw Frame</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 10: ACTIVITY DIAGRAM DETAILS ========== -->
+            <section id="activity-details">
+                <h2>Activity Diagram: Win/Lose Flow</h2>
+                <div class="content">
+                    <div class="split">
+                        <div class="split-main">
+                            <h3>Decision guards in our loop</h3>
+                            <p>After each physics step, collision callbacks check conditions:</p>
+                            <ul class="styled-list">
+                                <li><strong>[candy in target + speed &lt; 80]</strong> &rarr; start 2s settle timer</li>
+                                <li><strong>[settle complete]</strong> &rarr; transition to WON</li>
+                                <li><strong>[candy hits spike]</strong> &rarr; transition to LOST</li>
+                                <li><strong>[spider reaches candy]</strong> &rarr; transition to LOST</li>
+                                <li><strong>[candy out of bounds]</strong> &rarr; transition to LOST</li>
+                            </ul>
+                        </div>
+                        <div class="split-side">
+                            <h3>Synchronization points</h3>
+                            <p>We use deferred post-step actions &mdash; no space mutation during the solver step:</p>
+                            <div class="progression-list">
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-lock"></i></span> Physics step completes</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-lock-open"></i></span> Callbacks fire safely</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-check-circle"></i></span> State mutations happen</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-paint-brush"></i></span> Renderer sees final state</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 11: AVOIDING CYCLIC DEPENDENCIES ========== -->
+            <section id="cyclic-deps">
+                <h2>Avoiding Cyclic Dependencies</h2>
+                <div class="content">
+                    <p class="subtext">The lecture warns: if Module A references B, and B references A, you have a cycle. Here's how we avoid it:</p>
+                    <div class="cycle-layout">
+                        <div class="cycle-card" style="border-left: 3px solid var(--coral);">
+                            <span class="cycle-label bad">Problem Pattern</span>
+                            <h4>Ship &amp; Game State cycle</h4>
+                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;">The lecture's example: Ship fires projectiles and needs to add them to Game State. But Game State stores the Ship. This creates a circular reference.</p>
+                            <pre>Ship.py  &lt;--&gt;  GameState.py
+  (cyclic import!)</pre>
+                        </div>
+                        <div class="cycle-card fixed" style="border-left: 3px solid var(--green);">
+                            <span class="cycle-label good">Our Solution</span>
+                            <h4>Game as mediator</h4>
+                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;">In our project, <span class="mono">game.py</span> acts as the controller. Entities and physics never import each other directly &mdash; game.py mediates.</p>
+                            <pre>entities.py  --&gt;  game.py  &lt;--  physics.py
+          (no cycle! controller mediates)</pre>
+                        </div>
+                    </div>
+                    <div class="inline-note warm">
+                        <span class="note-icon"><i class="ph-duotone ph-check-circle"></i></span>
+                        <span><strong>Our rule:</strong> physics.py never imports entities.py. Entities never import physics.py. game.py imports both and wires them together.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 12: APPLICATION STRUCTURE ========== -->
+            <section id="app-structure">
+                <h2>Application Structure (MVC)</h2>
+                <div class="content">
+                    <p class="subtext">Our project follows the Model-View-Controller pattern the lecture recommends for organizing CRC cards.</p>
+                    <div class="structure-tree" style="gap: 6px;">
+                        <div class="tree-node root">
+                            <h4 style="color:var(--coral);">run.py</h4>
+                            <p>Root Controller</p>
+                        </div>
+                        <div class="tree-connector"></div>
+                        <div class="tree-line"></div>
+                        <div class="tree-row" style="gap: 14px; margin-top: 6px;">
+                            <div class="tree-node" style="border-color: var(--green);">
+                                <h4 style="color:var(--green);">game.py</h4>
+                                <p>Subcontroller</p>
+                            </div>
+                            <div class="tree-node" style="border-color: var(--blue);">
+                                <h4 style="color:var(--blue);">entities.py</h4>
+                                <p>Model</p>
+                            </div>
+                            <div class="tree-node" style="border-color: var(--gold);">
+                                <h4 style="color:var(--gold);">physics.py</h4>
+                                <p>Model</p>
+                            </div>
+                        </div>
+                        <div class="tree-connector"></div>
+                        <div class="tree-line"></div>
+                        <div class="tree-row" style="gap: 14px; margin-top: 6px;">
+                            <div class="tree-node" style="border-color: var(--teal);">
+                                <h4 style="color:var(--teal);">renderer.py + ui.py</h4>
+                                <p>View</p>
+                            </div>
+                            <div class="tree-node" style="border-color: var(--purple);">
+                                <h4 style="color:var(--purple);">levels.py + savedata.py</h4>
+                                <p>Model (Data)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
+                        <span><strong>Ownership:</strong> run.py owns game.py (instantiates it). <strong>Collaboration:</strong> game.py calls methods on entities, physics, and renderer but is not owned by them.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 13: DATA-DRIVEN DESIGN ========== -->
+            <section id="data-driven">
+                <h2>Data-Driven Level Design</h2>
+                <div class="content">
+                    <div class="split">
+                        <div class="split-main">
+                            <h3>Level schema</h3>
+                            <p>Levels are defined as dictionaries &mdash; not hardcoded. New levels require data edits, not engine rewrites.</p>
+                            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 6px;">
+                                <pre style="margin:0; font-family:'JetBrains Mono',monospace; font-size:9pt; color:#cef4ff; line-height:1.4; white-space:pre-wrap;">{
+  "name": "Double Swing",
+  "candy": (360, 900),
+  "target": (200, 250, 30),
+  "anchors": [{"x":260,"y":1100,"letter":"A"}],
+  "spikes": [...],
+  "teleports": [...],
+  "spiders": [...]
+}</pre>
+                            </div>
+                        </div>
+                        <div class="split-side">
+                            <h3>Tooling pipeline</h3>
+                            <div class="progression-list">
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-pencil"></i></span> Level editor creates data</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-shield-check"></i></span> Validator checks bounds</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-code"></i></span> Factory loop builds entities</div>
+                                <div class="prog-item"><span class="prog-num"><i class="ph-duotone ph-play"></i></span> Game runs the level</div>
+                            </div>
+                            <div class="inline-note warm" style="margin-top: 8px;">
+                                <span class="note-icon"><i class="ph-duotone ph-lightbulb"></i></span>
+                                <span>Separation of authoring and runtime means designers iterate without touching engine code.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 14: KEY TAKEAWAYS ========== -->
+            <section id="takeaways">
+                <h2>Key Takeaways</h2>
+                <div class="content">
+                    <div class="arch-takeaway">
+                        <div class="arch-take-item">
+                            <span class="arch-take-num">01</span>
+                            <div>
+                                <h4>Design before you code</h4>
+                                <p>CRC cards and activity diagrams helped us agree on module boundaries <em>before</em> writing a single line. This saved us from duplicated work and missing features.</p>
+                            </div>
+                        </div>
+                        <div class="arch-take-item">
+                            <span class="arch-take-num">02</span>
+                            <div>
+                                <h4>Keep modules independent</h4>
+                                <p>Each module hides its implementation behind an API. Physics doesn't know about UI. Entities don't know about rendering. This makes changes safe and local.</p>
+                            </div>
+                        </div>
+                        <div class="arch-take-item">
+                            <span class="arch-take-num">03</span>
+                            <div>
+                                <h4>Use a controller to break cycles</h4>
+                                <p>game.py mediates between physics and entities. No module imports its sibling &mdash; the controller wires everything together.</p>
+                            </div>
+                        </div>
+                        <div class="arch-take-item">
+                            <span class="arch-take-num">04</span>
+                            <div>
+                                <h4>Data-driven beats code-driven</h4>
+                                <p>Levels are schemas, not source code. Our level editor and validator sit outside the engine, letting content scale without touching the simulation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SLIDE 15: END ========== -->
+            <section id="end">
+                <div class="end-content">
+                    <div class="end-icon"><i class="ph-duotone ph-tree-structure"></i></div>
+                    <h2>Architecture done right.</h2>
+                    <p class="end-subtitle">Cut The Rope &mdash; a layered, data-driven game built with CRC cards, clear module boundaries, and zero cyclic dependencies.</p>
+                    <div class="end-tags">
+                        <span class="end-tag">Modules</span>
+                        <span class="end-tag">CRC Cards</span>
+                        <span class="end-tag">Relationships</span>
+                        <span class="end-tag">Activity Diagrams</span>
+                        <span class="end-tag">No Cycles</span>
+                        <span class="end-tag">Data-Driven</span>
+                    </div>
+                    <p class="end-footnote">Based on Lecture 4: Architecture Design &mdash; Mrs. Rina D. Zarro</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: false,
+            progress: false,
+            slideNumber: true,
+            hash: false,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            center: true,
+            width: 1280,
+            height: 720,
+            backgroundTransition: 'fade',
+            overview: false,
+            keyboard: true
+        });
+    </script>
+</body>
+
+</html>
