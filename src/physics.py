@@ -16,16 +16,8 @@ from .config import (
     TARGET_FLOOR_FRICTION, TARGET_FLOOR_ELASTICITY,
     WINCH_MIN_LENGTH, WINCH_MAX_LENGTH,
 )
+from .types import CT_CANDY, CT_TARGET, CT_SPIKE, CT_TELE_A, CT_TELE_B
 from .utils import distance
-
-
-# Collision types (must match entities)
-CT_CANDY   = 1
-CT_TARGET  = 2
-CT_PLATFORM = 3
-CT_SPIKE   = 4
-CT_TELE_A  = 5
-CT_TELE_B  = 6
 
 
 class RopeData:

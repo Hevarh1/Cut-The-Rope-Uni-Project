@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecture 4 — Project Architecture (Cut The Rope)</title>
+    <title>Project Architecture (Cut The Rope)</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
@@ -389,11 +389,11 @@
                 </div>
             </section>
 
-            <!-- ========== SLIDE 2: LECTURE OVERVIEW ========== -->
+            <!-- ========== SLIDE 2: OVERVIEW ========== -->
             <section id="overview">
-                <h2>What This Lecture Covers</h2>
+                <h2>Architecture Overview</h2>
                 <div class="content">
-                    <p class="subtext">Lecture 4 teaches us how to design software architecture before writing code. Here are the key concepts we applied:</p>
+                    <p class="subtext">We designed our software architecture before writing code. Here are the key concepts we applied:</p>
                     <div class="checklist-grid" style="grid-template-columns: repeat(3, 1fr);">
                         <div class="check-card">
                             <div class="check-icon"><i class="ph-duotone ph-squares-four"></i></div>
@@ -401,14 +401,14 @@
                             <p>Break the game into logical subsystems with hidden implementations and clear APIs.</p>
                         </div>
                         <div class="check-card">
-                            <div class="check-icon"><i class="ph-duotone ph-cards"></i></div>
-                            <h4>CRC Cards</h4>
-                            <p>Class-Responsibility-Collaboration cards define what each module does and who it talks to.</p>
-                        </div>
-                        <div class="check-card">
                             <div class="check-icon"><i class="ph-duotone ph-graph"></i></div>
                             <h4>Relationship Graphs</h4>
                             <p>Visualize which modules depend on each other and in what direction.</p>
+                        </div>
+                        <div class="check-card">
+                            <div class="check-icon"><i class="ph-duotone ph-cards"></i></div>
+                            <h4>CRC Cards</h4>
+                            <p>Class-Responsibility-Collaboration cards define what each module does and who it talks to.</p>
                         </div>
                         <div class="check-card">
                             <div class="check-icon"><i class="ph-duotone ph-flow-arrow"></i></div>
@@ -435,7 +435,7 @@
                 <div class="content">
                     <div class="split">
                         <div class="split-main">
-                            <p class="lead">The lecture says: someone must make high-level architecture decisions before anyone writes code.</p>
+                            <p class="lead">Someone must make high-level architecture decisions before anyone writes code.</p>
                             <ul class="styled-list">
                                 <li><strong>Split classes</strong> into modules with clear boundaries</li>
                                 <li><strong>Choose computation model</strong> &mdash; fixed timestep physics loop</li>
@@ -464,7 +464,7 @@
             <section id="modules">
                 <h2>Our Module Breakdown</h2>
                 <div class="content">
-                    <p class="subtext">We identified six logical subsystems. Each hides its implementation behind an API that the rest of the game uses.</p>
+                    <p class="subtext">We identified ten logical subsystems following MVC separation. Each hides its implementation behind a clear API.</p>
                     <div class="crc-grid" style="grid-template-columns: repeat(3, 1fr);">
                         <div class="relation-card" style="border-left: 3px solid var(--coral);">
                             <h4><i class="ph-duotone ph-terminal" style="color:var(--coral);"></i> App Shell</h4>
@@ -479,7 +479,7 @@
                             <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/game.py</p>
                             <ul>
                                 <li>Entity creation &amp; level lifecycle</li>
-                                <li>Input handling &amp; state transitions</li>
+                                <li>State transitions &amp; win/lose logic</li>
                             </ul>
                         </div>
                         <div class="relation-card" style="border-left: 3px solid var(--gold);">
@@ -491,27 +491,53 @@
                             </ul>
                         </div>
                         <div class="relation-card" style="border-left: 3px solid var(--blue);">
-                            <h4><i class="ph-duotone ph-cube" style="color:var(--blue);"></i> Entities</h4>
+                            <h4><i class="ph-duotone ph-cube" style="color:var(--blue);"></i> Entities (Model)</h4>
                             <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/entities.py</p>
                             <ul>
                                 <li>Candy, Target, Anchors, Spikes</li>
                                 <li>Teleports, Spiders, Platforms</li>
+                                <li>Pure data + physics, no drawing</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid #e88;">
+                            <h4><i class="ph-duotone ph-swap" style="color:#e88;"></i> Shared Types</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/types.py</p>
+                            <ul>
+                                <li>Collision type constants (CT_*)</li>
+                                <li>GameState enum (PLAYING/WON/LOST)</li>
+                                <li>Contract between physics &amp; entities</li>
                             </ul>
                         </div>
                         <div class="relation-card" style="border-left: 3px solid var(--teal);">
-                            <h4><i class="ph-duotone ph-paint-brush" style="color:var(--teal);"></i> Renderer + UI</h4>
-                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/renderer.py, src/ui.py</p>
+                            <h4><i class="ph-duotone ph-paint-brush" style="color:var(--teal);"></i> Entity Renderer (View)</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/entity_renderer.py</p>
                             <ul>
-                                <li>Virtual canvas &amp; particles</li>
-                                <li>Menu screens &amp; HUD</li>
+                                <li>Standalone draw functions per entity</li>
+                                <li>All visual effects: glow, pulse, shadow</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid #7ce;">
+                            <h4><i class="ph-duotone ph-layout" style="color:#7ce;"></i> Game Renderer (View)</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/game_renderer.py</p>
+                            <ul>
+                                <li>HUD, win/lose overlays, star rating</li>
+                                <li>Orchestrates entity drawing order</li>
+                            </ul>
+                        </div>
+                        <div class="relation-card" style="border-left: 3px solid #fa7;">
+                            <h4><i class="ph-duotone ph-cursor" style="color:#fa7;"></i> Input Handler (Controller)</h4>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/input_handler.py</p>
+                            <ul>
+                                <li>Mouse drag for sliders</li>
+                                <li>Keyboard rope cutting &amp; winch control</li>
                             </ul>
                         </div>
                         <div class="relation-card" style="border-left: 3px solid var(--purple);">
                             <h4><i class="ph-duotone ph-database" style="color:var(--purple);"></i> Data Layer</h4>
-                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/levels.py, src/savedata.py</p>
+                            <p style="font-family:'JetBrains Mono',monospace; font-size:9pt; color:var(--text-dim); margin-bottom:6px;">src/renderer.py, src/ui.py, src/levels.py, src/savedata.py</p>
                             <ul>
-                                <li>Level schemas &amp; definitions</li>
-                                <li>Score persistence &amp; custom levels</li>
+                                <li>Virtual canvas, particles, menu screens</li>
+                                <li>Level schemas &amp; score persistence</li>
                             </ul>
                         </div>
                     </div>
@@ -522,14 +548,14 @@
             <section id="relationship-graph">
                 <h2>Module Relationship Graph</h2>
                 <div class="content">
-                    <p class="subtext">Edges show dependency: Module A needs Module B's API. Lower layers don't know about upper layers.</p>
+                    <p class="subtext">Edges show dependency direction. Lower layers never import upper layers &mdash; one-way data flow.</p>
                     <div class="activity-flow" style="gap: 4px;">
                         <div class="flow-step" style="border-color: var(--coral); min-width: 320px;">
                             <strong style="color:var(--coral);">run.py</strong> &mdash; App Shell
                         </div>
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
                         <div class="flow-step" style="border-color: var(--green); min-width: 320px;">
-                            <strong style="color:var(--green);">game.py</strong> &mdash; Game Orchestrator
+                            <strong style="color:var(--green);">game.py</strong> &mdash; Controller
                         </div>
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
                         <div class="flow-row" style="gap: 14px;">
@@ -538,6 +564,21 @@
                             </div>
                             <div class="flow-step" style="border-color: var(--blue);">
                                 <strong style="color:var(--blue);">entities.py</strong>
+                            </div>
+                            <div class="flow-step" style="border-color: #e88;">
+                                <strong style="color:#e88;">types.py</strong>
+                            </div>
+                        </div>
+                        <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
+                        <div class="flow-row" style="gap: 14px;">
+                            <div class="flow-step" style="border-color: var(--teal);">
+                                <strong style="color:var(--teal);">entity_renderer.py</strong>
+                            </div>
+                            <div class="flow-step" style="border-color: #7ce;">
+                                <strong style="color:#7ce;">game_renderer.py</strong>
+                            </div>
+                            <div class="flow-step" style="border-color: #fa7;">
+                                <strong style="color:#fa7;">input_handler.py</strong>
                             </div>
                         </div>
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
@@ -552,7 +593,7 @@
                     </div>
                     <div class="inline-note">
                         <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
-                        <span>Key rule: <strong>lower modules never import upper modules.</strong> The renderer doesn't know about game logic. Physics doesn't know about UI.</span>
+                        <span><strong>Key rule:</strong> game.py delegates to input_handler (Controller), game_renderer (View), and entities (Model). <span class="mono">types.py</span> is the shared contract between physics and entities &mdash; neither imports the other.</span>
                     </div>
                 </div>
             </section>
@@ -592,9 +633,10 @@
                                     <div class="crc-col-label">Responsibilities</div>
                                     <ul>
                                         <li>Build entities from level schema</li>
-                                        <li>Orchestrate update order</li>
-                                        <li>Handle rope cuts &amp; winch input</li>
+                                        <li>Orchestrate update order &amp; physics</li>
                                         <li>Manage PLAYING / WON / LOST states</li>
+                                        <li>Delegate input to input_handler</li>
+                                        <li>Delegate rendering to game_renderer</li>
                                     </ul>
                                 </div>
                                 <div class="crc-col">
@@ -602,7 +644,8 @@
                                     <ul>
                                         <li>physics.py (creates bodies &amp; ropes)</li>
                                         <li>entities.py (instantiates objects)</li>
-                                        <li>renderer.py (hands off draw calls)</li>
+                                        <li>input_handler.py (delegates events)</li>
+                                        <li>game_renderer.py (delegates draw)</li>
                                         <li>savedata.py (records scores)</li>
                                     </ul>
                                 </div>
@@ -611,16 +654,16 @@
                     </div>
                     <div class="inline-note warm">
                         <span class="note-icon"><i class="ph-duotone ph-lightbulb"></i></span>
-                        <span><strong>Boundary rule:</strong> run.py never touches physics internals. game.py never draws anything. Each card's responsibilities are self-contained.</span>
+                        <span><strong>Boundary rule:</strong> run.py never touches physics internals. game.py never draws or handles input directly &mdash; it delegates. Each card's responsibilities are self-contained.</span>
                     </div>
                 </div>
             </section>
 
-            <!-- ========== SLIDE 7: CRC CARDS — PHYSICS + ENTITIES ========== -->
+            <!-- ========== SLIDE 7: CRC CARDS — PHYSICS + ENTITIES + TYPES ========== -->
             <section id="crc-engine">
                 <h2>CRC Cards: Engine Layer</h2>
                 <div class="content">
-                    <p class="subtext">The simulation layer — physics handles the math, entities define gameplay objects.</p>
+                    <p class="subtext">The simulation layer &mdash; physics handles the math, entities define gameplay objects, types.py is their shared contract.</p>
                     <div class="crc-grid">
                         <div class="crc-card">
                             <div class="crc-header gold"><i class="ph-duotone ph-atom"></i> physics.py (PhysicsWorld)</div>
@@ -640,82 +683,88 @@
                                     <ul>
                                         <li>Pymunk library (delegated solver)</li>
                                         <li>game.py (collision callbacks)</li>
-                                        <li>entities.py (body references)</li>
+                                        <li>types.py (collision type constants)</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         <div class="crc-card">
-                            <div class="crc-header blue"><i class="ph-duotone ph-cube"></i> entities.py</div>
+                            <div class="crc-header blue"><i class="ph-duotone ph-cube"></i> entities.py (Pure Model)</div>
                             <div class="crc-body">
                                 <div class="crc-col">
                                     <div class="crc-col-label">Responsibilities</div>
                                     <ul>
                                         <li>Candy: dynamic body + squash/stretch</li>
-                                        <li>Target: sensor + swallow animation</li>
+                                        <li>Target: sensor + swallow animation state</li>
                                         <li>Anchor variants: static, magnet, slider, winch</li>
                                         <li>Hazards: spike, teleport, spider</li>
+                                        <li><strong>No drawing code</strong> &mdash; pure data + physics</li>
                                     </ul>
                                 </div>
                                 <div class="crc-col">
                                     <div class="crc-col-label">Collaborations</div>
                                     <ul>
-                                        <li>physics.py (registers bodies)</li>
-                                        <li>renderer.py (provides draw data)</li>
-                                        <li>config.py (reads constants)</li>
+                                        <li>types.py (collision type constants)</li>
+                                        <li>game.py (registers into physics space)</li>
+                                        <li>entity_renderer.py (provides positions)</li>
+                                        <li>config.py (reads physics constants)</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <div class="inline-note">
+                        <span class="note-icon"><i class="ph-duotone ph-swap"></i></span>
+                        <span><strong>types.py</strong> holds <span class="mono">CT_CANDY, CT_TARGET, CT_SPIKE, CT_TELE_A, CT_TELE_B</span> and <span class="mono">GameState</span> &mdash; the shared constants that physics.py and entities.py both import. This eliminates duplicate definitions and prevents drift.</span>
+                    </div>
                 </div>
             </section>
 
-            <!-- ========== SLIDE 8: CRC CARDS — RENDERING + DATA ========== -->
+            <!-- ========== SLIDE 8: CRC CARDS — VIEW + CONTROLLER + DATA ========== -->
             <section id="crc-presentation">
-                <h2>CRC Cards: Presentation &amp; Data</h2>
+                <h2>CRC Cards: View, Controller &amp; Data</h2>
                 <div class="content">
                     <div class="crc-grid">
                         <div class="crc-card">
-                            <div class="crc-header teal"><i class="ph-duotone ph-paint-brush"></i> renderer.py + ui.py</div>
+                            <div class="crc-header teal"><i class="ph-duotone ph-paint-brush"></i> entity_renderer.py + game_renderer.py</div>
                             <div class="crc-body">
                                 <div class="crc-col">
                                     <div class="crc-col-label">Responsibilities</div>
                                     <ul>
-                                        <li>Virtual canvas scaling (720&times;1280)</li>
-                                        <li>Background, starfield, particles</li>
-                                        <li>Title, select, guide, custom screens</li>
-                                        <li>Mouse trail &amp; visual feedback</li>
+                                        <li>Standalone draw functions per entity</li>
+                                        <li>HUD, win/lose overlays, star rating</li>
+                                        <li>Orchestrate entity draw order</li>
+                                        <li>All visual effects: glow, pulse, shadow</li>
                                     </ul>
                                 </div>
                                 <div class="crc-col">
                                     <div class="crc-col-label">Collaborations</div>
                                     <ul>
-                                        <li>game.py (receives state to render)</li>
+                                        <li>game.py (receives game object)</li>
                                         <li>entities.py (reads positions)</li>
-                                        <li>savedata.py (displays progress)</li>
+                                        <li>config.py (reads visual constants)</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         <div class="crc-card">
-                            <div class="crc-header purple"><i class="ph-duotone ph-database"></i> levels.py + savedata.py</div>
+                            <div class="crc-header" style="background:#fa7;"><i class="ph-duotone ph-cursor" style="color:#333;"></i> input_handler.py</div>
                             <div class="crc-body">
                                 <div class="crc-col">
                                     <div class="crc-col-label">Responsibilities</div>
                                     <ul>
-                                        <li>Define campaign level schemas</li>
-                                        <li>Save/load best times &amp; star ratings</li>
-                                        <li>Import/export custom levels</li>
-                                        <li>JSON persistence to data/ folder</li>
+                                        <li>Mouse drag for slider anchors</li>
+                                        <li>Keyboard rope cutting by letter</li>
+                                        <li>Winch shift/ctrl modifier handling</li>
+                                        <li>Magnet deactivation on cut</li>
                                     </ul>
                                 </div>
                                 <div class="crc-col">
                                     <div class="crc-col-label">Collaborations</div>
                                     <ul>
-                                        <li>game.py (provides level data)</li>
-                                        <li>ui.py (provides progress data)</li>
-                                        <li>level_editor.py (creates data)</li>
+                                        <li>game.py (receives game object)</li>
+                                        <li>physics.py (cuts ropes)</li>
+                                        <li>renderer.py (particle effects)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -723,7 +772,7 @@
                     </div>
                     <div class="inline-note">
                         <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
-                        <span><strong>Renderer boundary:</strong> visuals react to outcomes but never define win/lose conditions. Data modules are storage-agnostic from gameplay logic.</span>
+                        <span><strong>MVC enforced:</strong> entity_renderer + game_renderer are pure <strong>View</strong> (no logic). input_handler is pure <strong>Controller</strong> (no drawing). entities.py is pure <strong>Model</strong> (no rendering). game.py orchestrates the three.</span>
                     </div>
                 </div>
             </section>
@@ -740,7 +789,7 @@
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
                         <div class="flow-guard">[if PLAYING]</div>
                         <div class="flow-row" style="gap: 10px;">
-                            <div class="flow-step">Handle rope cuts<br><span class="mono">Game.handle_event()</span></div>
+                            <div class="flow-step">Handle rope cuts<br><span class="mono">InputHandler.handle_event()</span></div>
                             <div class="flow-step">Process mechanics<br>magnets, winches</div>
                         </div>
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
@@ -750,7 +799,7 @@
                         <div class="flow-arrow"><i class="ph-bold ph-arrow-down"></i></div>
                         <div class="flow-row" style="gap: 10px;">
                             <div class="flow-step highlight"><strong>Update Particles</strong></div>
-                            <div class="flow-step highlight"><strong>Draw Frame</strong></div>
+                            <div class="flow-step highlight"><strong>Draw Frame</strong> <span class="mono">draw_game_frame()</span></div>
                         </div>
                     </div>
                 </div>
@@ -790,26 +839,28 @@
             <section id="cyclic-deps">
                 <h2>Avoiding Cyclic Dependencies</h2>
                 <div class="content">
-                    <p class="subtext">The lecture warns: if Module A references B, and B references A, you have a cycle. Here's how we avoid it:</p>
+                    <p class="subtext">If Module A references B, and B references A, you have a cycle. Here's how we break them:</p>
                     <div class="cycle-layout">
                         <div class="cycle-card" style="border-left: 3px solid var(--coral);">
                             <span class="cycle-label bad">Problem Pattern</span>
-                            <h4>Ship &amp; Game State cycle</h4>
-                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;">The lecture's example: Ship fires projectiles and needs to add them to Game State. But Game State stores the Ship. This creates a circular reference.</p>
-                            <pre>Ship.py  &lt;--&gt;  GameState.py
-  (cyclic import!)</pre>
+                            <h4>Shared collision constants</h4>
+                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;">Both physics.py and entities.py need the same collision type numbers. If each defines them, values can drift. If they import each other, you get a cycle.</p>
+                            <pre>entities.py  &lt;--&gt;  physics.py
+  (cyclic if they import each other!)</pre>
                         </div>
                         <div class="cycle-card fixed" style="border-left: 3px solid var(--green);">
                             <span class="cycle-label good">Our Solution</span>
-                            <h4>Game as mediator</h4>
-                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;">In our project, <span class="mono">game.py</span> acts as the controller. Entities and physics never import each other directly &mdash; game.py mediates.</p>
-                            <pre>entities.py  --&gt;  game.py  &lt;--  physics.py
-          (no cycle! controller mediates)</pre>
+                            <h4>Shared types.py + game.py as mediator</h4>
+                            <p style="font-size: 10.5pt; color: var(--text-dim); margin-bottom: 8px;"><span class="mono">types.py</span> holds shared constants. <span class="mono">game.py</span> acts as the controller &mdash; entities and physics never import each other.</p>
+                            <pre>types.py (CT_CANDY, CT_TARGET, ...)
+    &circlearrowleft;         &circlearrowleft;
+entities.py    physics.py
+    (no cycle! shared contract)</pre>
                         </div>
                     </div>
                     <div class="inline-note warm">
                         <span class="note-icon"><i class="ph-duotone ph-check-circle"></i></span>
-                        <span><strong>Our rule:</strong> physics.py never imports entities.py. Entities never import physics.py. game.py imports both and wires them together.</span>
+                        <span><strong>Our rules:</strong> (1) physics.py never imports entities.py &mdash; game.py wires them. (2) Shared constants live in types.py &mdash; single source of truth. (3) View modules never import Controller modules.</span>
                     </div>
                 </div>
             </section>
@@ -818,7 +869,7 @@
             <section id="app-structure">
                 <h2>Application Structure (MVC)</h2>
                 <div class="content">
-                    <p class="subtext">Our project follows the Model-View-Controller pattern the lecture recommends for organizing CRC cards.</p>
+                    <p class="subtext">Our project follows the Model-View-Controller pattern. Each layer only depends on layers below it.</p>
                     <div class="structure-tree" style="gap: 6px;">
                         <div class="tree-node root">
                             <h4 style="color:var(--coral);">run.py</h4>
@@ -826,10 +877,16 @@
                         </div>
                         <div class="tree-connector"></div>
                         <div class="tree-line"></div>
-                        <div class="tree-row" style="gap: 14px; margin-top: 6px;">
-                            <div class="tree-node" style="border-color: var(--green);">
-                                <h4 style="color:var(--green);">game.py</h4>
-                                <p>Subcontroller</p>
+                        <div class="tree-node" style="border-color: var(--green); min-width: 280px;">
+                            <h4 style="color:var(--green);">game.py</h4>
+                            <p>Game Orchestrator (Controller)</p>
+                        </div>
+                        <div class="tree-connector"></div>
+                        <div class="tree-line"></div>
+                        <div class="tree-row" style="gap: 10px; margin-top: 6px;">
+                            <div class="tree-node" style="border-color: #fa7;">
+                                <h4 style="color:#fa7;">input_handler.py</h4>
+                                <p>Controller</p>
                             </div>
                             <div class="tree-node" style="border-color: var(--blue);">
                                 <h4 style="color:var(--blue);">entities.py</h4>
@@ -839,12 +896,20 @@
                                 <h4 style="color:var(--gold);">physics.py</h4>
                                 <p>Model</p>
                             </div>
+                            <div class="tree-node" style="border-color: #e88;">
+                                <h4 style="color:#e88;">types.py</h4>
+                                <p>Shared Contract</p>
+                            </div>
                         </div>
                         <div class="tree-connector"></div>
                         <div class="tree-line"></div>
-                        <div class="tree-row" style="gap: 14px; margin-top: 6px;">
+                        <div class="tree-row" style="gap: 10px; margin-top: 6px;">
                             <div class="tree-node" style="border-color: var(--teal);">
-                                <h4 style="color:var(--teal);">renderer.py + ui.py</h4>
+                                <h4 style="color:var(--teal);">entity_renderer.py</h4>
+                                <p>View</p>
+                            </div>
+                            <div class="tree-node" style="border-color: #7ce;">
+                                <h4 style="color:#7ce;">game_renderer.py</h4>
                                 <p>View</p>
                             </div>
                             <div class="tree-node" style="border-color: var(--purple);">
@@ -855,7 +920,7 @@
                     </div>
                     <div class="inline-note">
                         <span class="note-icon"><i class="ph-duotone ph-info"></i></span>
-                        <span><strong>Ownership:</strong> run.py owns game.py (instantiates it). <strong>Collaboration:</strong> game.py calls methods on entities, physics, and renderer but is not owned by them.</span>
+                        <span><strong>Dependency rule:</strong> arrows only point downward. View never imports Controller. Model never imports View. <span class="mono">types.py</span> sits at the bottom &mdash; everyone depends on it, it depends on nothing.</span>
                     </div>
                 </div>
             </section>
@@ -939,16 +1004,15 @@
                 <div class="end-content">
                     <div class="end-icon"><i class="ph-duotone ph-tree-structure"></i></div>
                     <h2>Architecture done right.</h2>
-                    <p class="end-subtitle">Cut The Rope &mdash; a layered, data-driven game built with CRC cards, clear module boundaries, and zero cyclic dependencies.</p>
+                    <p class="end-subtitle">Cut The Rope &mdash; a layered, MVC-structured, data-driven game with clear module boundaries and zero cyclic dependencies.</p>
                     <div class="end-tags">
-                        <span class="end-tag">Modules</span>
+                        <span class="end-tag">MVC Pattern</span>
                         <span class="end-tag">CRC Cards</span>
-                        <span class="end-tag">Relationships</span>
-                        <span class="end-tag">Activity Diagrams</span>
+                        <span class="end-tag">10 Modules</span>
                         <span class="end-tag">No Cycles</span>
                         <span class="end-tag">Data-Driven</span>
                     </div>
-                    <p class="end-footnote">Based on Lecture 4: Architecture Design &mdash; Mrs. Rina D. Zarro</p>
+                    <p class="end-footnote">Supervised by Mrs. Rina D. Zarro</p>
                 </div>
             </section>
 
