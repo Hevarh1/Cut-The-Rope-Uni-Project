@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "name": "My Level",
+    "candy": [
+      277,
+      905
+    ],
+    "target": [
+      394,
+      281,
+      30
+    ],
+    "star_times": [
+      5.0,
+      10.0,
+      20.0
+    ],
+    "anchors": [
+      {
+        "x": 278,
+        "y": 1122,
+        "letter": "A",
+        "length": 180
+      }
+    ],
+    "magnets": [],
+    "sliders": [],
+    "winches": [],
+    "platforms": [
+      {
+        "x1": 174,
+        "y1": 438,
+        "x2": 372,
+        "y2": 281,
+        "thickness": 8
+      }
+    ],
+    "spikes": [],
+    "teleports": [],
+    "spiders": []
+  }
+]

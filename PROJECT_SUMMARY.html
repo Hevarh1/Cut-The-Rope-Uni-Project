@@ -1,768 +1,1108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cut The Rope - Current Project Summary</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut The Rope - Current Project Summary</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
-  :root {
-    --bg-0: #f5f3ef;
-    --bg-1: #fcfaf7;
-    --ink-0: #151515;
-    --ink-1: #2a2a2a;
-    --ink-2: #5d5d5d;
-    --line: #d9d3cc;
-    --card: #fffdfa;
+        :root {
+            --bg-0: #f5f3ef;
+            --bg-1: #fcfaf7;
+            --ink-0: #151515;
+            --ink-1: #2a2a2a;
+            --ink-2: #5d5d5d;
+            --line: #d9d3cc;
+            --card: #fffdfa;
 
-    --accent-amber: #b96a08;
-    --accent-teal: #1f7b6e;
-    --accent-blue: #1765b2;
-    --accent-red: #c53f2f;
-    --accent-olive: #6a7b22;
-    --accent-slate: #4b5575;
+            --accent-amber: #b96a08;
+            --accent-teal: #1f7b6e;
+            --accent-blue: #1765b2;
+            --accent-red: #c53f2f;
+            --accent-olive: #6a7b22;
+            --accent-slate: #4b5575;
 
-    --chip-amber-bg: #fff1df;
-    --chip-teal-bg: #e5f7f4;
-    --chip-blue-bg: #e7f0fd;
-    --chip-red-bg: #fde9e6;
-    --chip-olive-bg: #eef5df;
-    --chip-slate-bg: #eceef4;
-  }
+            --chip-amber-bg: #fff1df;
+            --chip-teal-bg: #e5f7f4;
+            --chip-blue-bg: #e7f0fd;
+            --chip-red-bg: #fde9e6;
+            --chip-olive-bg: #eef5df;
+            --chip-slate-bg: #eceef4;
+        }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  body {
-    font-family: 'Sora', sans-serif;
-    background:
-      radial-gradient(1200px 800px at -10% -20%, #f1e4cc 0%, transparent 55%),
-      radial-gradient(900px 700px at 110% -10%, #dbe8ef 0%, transparent 45%),
-      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
-    color: var(--ink-1);
-    line-height: 1.68;
-    font-size: 14px;
-  }
+        body {
+            font-family: 'Sora', sans-serif;
+            background:
+                radial-gradient(1200px 800px at -10% -20%, #f1e4cc 0%, transparent 55%),
+                radial-gradient(900px 700px at 110% -10%, #dbe8ef 0%, transparent 45%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+            color: var(--ink-1);
+            line-height: 1.68;
+            font-size: 14px;
+        }
 
-  .hero {
-    border-bottom: 1px solid var(--line);
-    background:
-      linear-gradient(120deg, #221d16 0%, #2a2220 45%, #1b2630 100%);
-    color: #f5efe7;
-    padding: 48px 24px 42px;
-    text-align: center;
-  }
+        .hero {
+            border-bottom: 1px solid var(--line);
+            background:
+                linear-gradient(120deg, #221d16 0%, #2a2220 45%, #1b2630 100%);
+            color: #f5efe7;
+            padding: 48px 24px 42px;
+            text-align: center;
+        }
 
-  .hero h1 {
-    font-size: clamp(28px, 5vw, 46px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
+        .hero h1 {
+            font-size: clamp(28px, 5vw, 46px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
 
-  .hero .sub {
-    margin-top: 14px;
-    font-size: 14px;
-    opacity: 0.9;
-  }
+        .hero .sub {
+            margin-top: 14px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
 
-  .hero .meta {
-    margin-top: 14px;
-    font-size: 11px;
-    opacity: 0.75;
-    font-family: 'Space Mono', monospace;
-  }
+        .hero .meta {
+            margin-top: 14px;
+            font-size: 11px;
+            opacity: 0.75;
+            font-family: 'Space Mono', monospace;
+        }
 
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(110px, 1fr));
-    gap: 12px;
-    max-width: 1100px;
-    margin: 24px auto 0;
-  }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(110px, 1fr));
+            gap: 12px;
+            max-width: 1100px;
+            margin: 24px auto 0;
+        }
 
-  @media (max-width: 980px) {
-    .stats {
-      grid-template-columns: repeat(3, minmax(120px, 1fr));
-    }
-  }
+        @media (max-width: 980px) {
+            .stats {
+                grid-template-columns: repeat(3, minmax(120px, 1fr));
+            }
+        }
 
-  @media (max-width: 560px) {
-    .stats {
-      grid-template-columns: repeat(2, minmax(120px, 1fr));
-    }
-  }
+        @media (max-width: 560px) {
+            .stats {
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
+            }
+        }
 
-  .stat {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    padding: 13px 10px;
-  }
+        .stat {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 13px 10px;
+        }
 
-  .stat .v {
-    font-size: 22px;
-    font-weight: 800;
-    line-height: 1.1;
-  }
+        .stat .v {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
 
-  .stat .k {
-    margin-top: 4px;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.75;
-  }
+        .stat .k {
+            margin-top: 4px;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.75;
+        }
 
-  .wrap {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 34px 20px 64px;
-  }
+        .wrap {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 34px 20px 64px;
+        }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
 
-  .full {
-    grid-column: 1 / -1;
-  }
+        .full {
+            grid-column: 1 / -1;
+        }
 
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 20px 22px;
-    box-shadow: 0 8px 20px rgba(17, 12, 6, 0.04);
-  }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 20px 22px;
+            box-shadow: 0 8px 20px rgba(17, 12, 6, 0.04);
+        }
 
-  .card h2 {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--ink-0);
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+        .card h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink-0);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-  .num {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
+        .num {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
 
-  .n1 { background: var(--accent-blue); }
-  .n2 { background: var(--accent-teal); }
-  .n3 { background: var(--accent-amber); }
-  .n4 { background: var(--accent-slate); }
-  .n5 { background: var(--accent-red); }
-  .n6 { background: var(--accent-olive); }
+        .n1 {
+            background: var(--accent-blue);
+        }
 
-  .card h3 {
-    font-size: 12px;
-    margin-top: 14px;
-    margin-bottom: 7px;
-    color: var(--ink-0);
-    border-top: 1px solid var(--line);
-    padding-top: 10px;
-  }
+        .n2 {
+            background: var(--accent-teal);
+        }
 
-  .card p, .card li {
-    color: var(--ink-2);
-    font-size: 12.75px;
-    line-height: 1.72;
-  }
+        .n3 {
+            background: var(--accent-amber);
+        }
 
-  .card p {
-    margin-bottom: 9px;
-  }
+        .n4 {
+            background: var(--accent-slate);
+        }
 
-  .card p:last-child {
-    margin-bottom: 0;
-  }
+        .n5 {
+            background: var(--accent-red);
+        }
 
-  ul {
-    padding-left: 18px;
-    margin-top: 6px;
-  }
+        .n6 {
+            background: var(--accent-olive);
+        }
 
-  li { margin-bottom: 6px; }
+        .card h3 {
+            font-size: 12px;
+            margin-top: 14px;
+            margin-bottom: 7px;
+            color: var(--ink-0);
+            border-top: 1px solid var(--line);
+            padding-top: 10px;
+        }
 
-  code {
-    font-family: 'Space Mono', monospace;
-    background: #f2efe8;
-    color: #5f3f14;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-  }
+        .card p,
+        .card li {
+            color: var(--ink-2);
+            font-size: 12.75px;
+            line-height: 1.72;
+        }
 
-  .chip {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 999px;
-    margin: 3px 4px 3px 0;
-    letter-spacing: 0.04em;
-  }
+        .card p {
+            margin-bottom: 9px;
+        }
 
-  .amber { background: var(--chip-amber-bg); color: var(--accent-amber); }
-  .teal  { background: var(--chip-teal-bg); color: var(--accent-teal); }
-  .blue  { background: var(--chip-blue-bg); color: var(--accent-blue); }
-  .red   { background: var(--chip-red-bg); color: var(--accent-red); }
-  .olive { background: var(--chip-olive-bg); color: var(--accent-olive); }
-  .slate { background: var(--chip-slate-bg); color: var(--accent-slate); }
+        .card p:last-child {
+            margin-bottom: 0;
+        }
 
-  .mono {
-    font-family: 'Space Mono', monospace;
-    font-size: 11.5px;
-    line-height: 1.9;
-    color: #4e4e4e;
-    background: #fbf8f3;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 14px 16px;
-    overflow-x: auto;
-  }
+        ul {
+            padding-left: 18px;
+            margin-top: 6px;
+        }
 
-  .structure-intro {
-    margin-bottom: 10px;
-  }
+        li {
+            margin-bottom: 6px;
+        }
 
-  .structure-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 8px;
-  }
+        code {
+            font-family: 'Space Mono', monospace;
+            background: #f2efe8;
+            color: #5f3f14;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
 
-  .structure-block {
-    background: #fbf8f3;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 10px 12px;
-  }
+        .chip {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            margin: 3px 4px 3px 0;
+            letter-spacing: 0.04em;
+        }
 
-  .structure-block h4 {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-0);
-    margin-bottom: 6px;
-  }
+        .amber {
+            background: var(--chip-amber-bg);
+            color: var(--accent-amber);
+        }
 
-  .structure-items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
+        .teal {
+            background: var(--chip-teal-bg);
+            color: var(--accent-teal);
+        }
 
-  .structure-items li {
-    margin: 0;
-    padding: 6px 0;
-    border-top: 1px dashed #e4ded6;
-  }
+        .blue {
+            background: var(--chip-blue-bg);
+            color: var(--accent-blue);
+        }
 
-  .structure-items li:first-child {
-    border-top: none;
-    padding-top: 0;
-  }
+        .red {
+            background: var(--chip-red-bg);
+            color: var(--accent-red);
+        }
 
-  .structure-items li:last-child {
-    padding-bottom: 0;
-  }
+        .olive {
+            background: var(--chip-olive-bg);
+            color: var(--accent-olive);
+        }
 
-  .structure-path {
-    display: block;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.55;
-    color: #24466f;
-  }
+        .slate {
+            background: var(--chip-slate-bg);
+            color: var(--accent-slate);
+        }
 
-  .structure-desc {
-    display: block;
-    margin-top: 2px;
-    font-size: 11.5px;
-    line-height: 1.55;
-    color: var(--ink-2);
-  }
+        .mono {
+            font-family: 'Space Mono', monospace;
+            font-size: 11.5px;
+            line-height: 1.9;
+            color: #4e4e4e;
+            background: #fbf8f3;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 14px 16px;
+            overflow-x: auto;
+        }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 12px;
-  }
+        .structure-intro {
+            margin-bottom: 10px;
+        }
 
-  th {
-    text-align: left;
-    background: #f0ede7;
-    color: var(--ink-0);
-    border-bottom: 2px solid #d1cbc3;
-    padding: 9px 10px;
-    font-size: 11px;
-    letter-spacing: 0.02em;
-  }
+        .structure-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
 
-  td {
-    border-bottom: 1px solid var(--line);
-    padding: 8px 10px;
-    color: var(--ink-2);
-    vertical-align: top;
-  }
+        .structure-block {
+            background: #fbf8f3;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
 
-  tr:hover td {
-    background: #faf7f1;
-  }
+        .structure-block h4 {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink-0);
+            margin-bottom: 6px;
+        }
 
-  .flow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 12px 0;
-  }
+        .structure-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
 
-  .flow .node {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fbf9f5;
-    padding: 10px 14px;
-    min-width: 120px;
-    text-align: center;
-  }
+        .structure-items li {
+            margin: 0;
+            padding: 6px 0;
+            border-top: 1px dashed #e4ded6;
+        }
 
-  .flow .node b {
-    display: block;
-    font-size: 11px;
-    color: var(--ink-0);
-  }
+        .structure-items li:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
 
-  .flow .node small {
-    font-size: 10px;
-    color: var(--ink-2);
-  }
+        .structure-items li:last-child {
+            padding-bottom: 0;
+        }
 
-  .flow .arrow {
-    font-size: 16px;
-    color: var(--accent-blue);
-    font-weight: 700;
-  }
+        .structure-path {
+            display: block;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            line-height: 1.55;
+            color: #24466f;
+        }
 
-  .level-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
+        .structure-desc {
+            display: block;
+            margin-top: 2px;
+            font-size: 11.5px;
+            line-height: 1.55;
+            color: var(--ink-2);
+        }
 
-  @media (max-width: 640px) {
-    .level-grid { grid-template-columns: 1fr; }
-  }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
 
-  .level-card {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #faf7f2;
-    padding: 12px 13px;
-  }
+        th {
+            text-align: left;
+            background: #f0ede7;
+            color: var(--ink-0);
+            border-bottom: 2px solid #d1cbc3;
+            padding: 9px 10px;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+        }
 
-  .level-card .id {
-    font-size: 9px;
-    color: var(--accent-blue);
-    letter-spacing: 0.08em;
-    font-weight: 700;
-  }
+        td {
+            border-bottom: 1px solid var(--line);
+            padding: 8px 10px;
+            color: var(--ink-2);
+            vertical-align: top;
+        }
 
-  .level-card .name {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--ink-0);
-    margin-top: 3px;
-  }
+        tr:hover td {
+            background: #faf7f1;
+        }
 
-  .level-card .desc {
-    font-size: 11px;
-    color: var(--ink-2);
-    margin-top: 5px;
-    margin-bottom: 5px;
-  }
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+        }
 
-  .footer {
-    text-align: center;
-    border-top: 1px solid var(--line);
-    margin-top: 30px;
-    padding-top: 18px;
-    font-size: 11px;
-    color: #787878;
-  }
+        .flow .node {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fbf9f5;
+            padding: 10px 14px;
+            min-width: 120px;
+            text-align: center;
+        }
 
-  @media (max-width: 640px) {
-    .hero {
-      padding: 38px 16px 32px;
-    }
+        .flow .node b {
+            display: block;
+            font-size: 11px;
+            color: var(--ink-0);
+        }
 
-    .wrap {
-      padding: 22px 12px 44px;
-    }
+        .flow .node small {
+            font-size: 10px;
+            color: var(--ink-2);
+        }
 
-    .card {
-      padding: 16px 14px;
-    }
+        .flow .arrow {
+            font-size: 16px;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
 
-    .card h2 {
-      margin-bottom: 10px;
-    }
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
 
-    .card h3 {
-      margin-top: 12px;
-      padding-top: 8px;
-    }
-  }
-</style>
+        @media (max-width: 640px) {
+            .level-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .level-card {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #faf7f2;
+            padding: 12px 13px;
+        }
+
+        .level-card .id {
+            font-size: 9px;
+            color: var(--accent-blue);
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+
+        .level-card .name {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink-0);
+            margin-top: 3px;
+        }
+
+        .level-card .desc {
+            font-size: 11px;
+            color: var(--ink-2);
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            border-top: 1px solid var(--line);
+            margin-top: 30px;
+            padding-top: 18px;
+            font-size: 11px;
+            color: #787878;
+        }
+
+        @media (max-width: 640px) {
+            .hero {
+                padding: 38px 16px 32px;
+            }
+
+            .wrap {
+                padding: 22px 12px 44px;
+            }
+
+            .card {
+                padding: 16px 14px;
+            }
+
+            .card h2 {
+                margin-bottom: 10px;
+            }
+
+            .card h3 {
+                margin-top: 12px;
+                padding-top: 8px;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-<header class="hero">
-  <h1>Cut The Rope</h1>
-  <div class="sub">Current Project Summary (Generated from current repository structure and code)</div>
-  <div class="meta">Repository snapshot: branch architecture-changed | Date: 2026-04-21</div>
+    <header class="hero">
+        <h1>Cut The Rope</h1>
+        <div class="sub">Current Project Summary (Generated from current repository structure and code)</div>
+        <div class="meta">Repository snapshot: branch main | Date: 2026-04-21</div>
 
-  <div class="stats">
-    <div class="stat"><div class="v">10</div><div class="k">Campaign Levels</div></div>
-    <div class="stat"><div class="v">14</div><div class="k">src Modules</div></div>
-    <div class="stat"><div class="v">10</div><div class="k">Entity Types</div></div>
-    <div class="stat"><div class="v">5679</div><div class="k">Python LOC</div></div>
-    <div class="stat"><div class="v">720x1280</div><div class="k">Virtual Canvas</div></div>
-    <div class="stat"><div class="v">20</div><div class="k">Physics Substeps</div></div>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="grid">
-
-    <article class="card">
-      <h2><span class="num n1">1</span>Project Structure (Current)</h2>
-      <p class="structure-intro">The repository is organized as a small root layer plus a modular <code>src/</code> package split by responsibility.</p>
-
-      <div class="structure-sections">
-        <div class="structure-block">
-          <h4>Root Layer</h4>
-          <ul class="structure-items">
-            <li><span class="structure-path">run.py</span><span class="structure-desc">Entry point with <code>App</code> screen state machine and top-level event loop.</span></li>
-            <li><span class="structure-path">level_editor.py</span><span class="structure-desc">Standalone fullscreen visual level editor (v7 rewrite, 1640 lines).</span></li>
-            <li><span class="structure-path">validate_levels.py</span><span class="structure-desc">Legacy validator script (currently not aligned with current level module API).</span></li>
-            <li><span class="structure-path">requirements.txt</span><span class="structure-desc">Runtime dependencies: <code>pygame-ce</code> and <code>pymunk</code>.</span></li>
-            <li><span class="structure-path">README.md</span><span class="structure-desc">General project docs (some sections describe older architecture).</span></li>
-          </ul>
+        <div class="stats">
+            <div class="stat">
+                <div class="v">10</div>
+                <div class="k">Campaign Levels</div>
+            </div>
+            <div class="stat">
+                <div class="v">14</div>
+                <div class="k">src Modules</div>
+            </div>
+            <div class="stat">
+                <div class="v">10</div>
+                <div class="k">Entity Types</div>
+            </div>
+            <div class="stat">
+                <div class="v">5679</div>
+                <div class="k">Python LOC</div>
+            </div>
+            <div class="stat">
+                <div class="v">720x1280</div>
+                <div class="k">Virtual Canvas</div>
+            </div>
+            <div class="stat">
+                <div class="v">20</div>
+                <div class="k">Physics Substeps</div>
+            </div>
         </div>
+    </header>
 
-        <div class="structure-block">
-          <h4>Data Layer</h4>
-          <ul class="structure-items">
-            <li><span class="structure-path">data/scores.json</span><span class="structure-desc">Campaign best times and related score entries.</span></li>
-            <li><span class="structure-path">data/custom_levels.json</span><span class="structure-desc">User-created levels saved by the editor.</span></li>
-          </ul>
+    <main class="wrap">
+        <section class="grid">
+
+            <article class="card">
+                <h2><span class="num n1">1</span>Project Structure (Current)</h2>
+                <p class="structure-intro">The repository is organized as a small root layer plus a modular
+                    <code>src/</code> package split by responsibility.
+                </p>
+
+                <div class="structure-sections">
+                    <div class="structure-block">
+                        <h4>Root Layer</h4>
+                        <ul class="structure-items">
+                            <li><span class="structure-path">run.py</span><span class="structure-desc">Entry point with
+                                    <code>App</code> screen state machine and top-level event loop.</span></li>
+                            <li><span class="structure-path">level_editor.py</span><span
+                                    class="structure-desc">Standalone fullscreen visual level editor (v7 rewrite, 1640
+                                    lines).</span></li>
+                            <li><span class="structure-path">requirements.txt</span><span class="structure-desc">Runtime
+                                    dependencies: <code>pygame-ce</code> and <code>pymunk</code>.</span></li>
+                            <li><span class="structure-path">README.md</span><span class="structure-desc">Updated
+                                    project documentation and setup guide.</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="structure-block">
+                        <h4>Data Layer</h4>
+                        <ul class="structure-items">
+                            <li><span class="structure-path">data/scores.json</span><span
+                                    class="structure-desc">Campaign best times and related score entries.</span></li>
+                            <li><span class="structure-path">data/custom_levels.json</span><span
+                                    class="structure-desc">User-created levels saved by the editor.</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="structure-block">
+                        <h4>src/ Gameplay Core</h4>
+                        <ul class="structure-items">
+                            <li><span class="structure-path">src/config.py, src/types.py</span><span
+                                    class="structure-desc">Central constants plus collision and game-state
+                                    definitions.</span></li>
+                            <li><span class="structure-path">src/levels.py</span><span class="structure-desc">Ten
+                                    campaign level dictionaries and level access helpers.</span></li>
+                            <li><span class="structure-path">src/entities.py</span><span class="structure-desc">Entity
+                                    models and gameplay behavior for 10 mechanics.</span></li>
+                            <li><span class="structure-path">src/physics.py</span><span class="structure-desc">Pymunk
+                                    world wrapper, rope creation/cutting, collision setup.</span></li>
+                            <li><span class="structure-path">src/input_handler.py, src/game.py</span><span
+                                    class="structure-desc">Player input processing and per-level runtime loop.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="structure-block">
+                        <h4>src/ Rendering, UI, and Persistence</h4>
+                        <ul class="structure-items">
+                            <li><span class="structure-path">src/renderer.py</span><span class="structure-desc">Virtual
+                                    canvas, background, particles, starfield, scaling.</span></li>
+                            <li><span class="structure-path">src/entity_renderer.py, src/game_renderer.py</span><span
+                                    class="structure-desc">Entity draw routines and whole-frame composition/HUD
+                                    overlays.</span></li>
+                            <li><span class="structure-path">src/ui.py</span><span class="structure-desc">Title,
+                                    level-select, guide, and custom-level browser screens.</span></li>
+                            <li><span class="structure-path">src/savedata.py</span><span class="structure-desc">Score
+                                    persistence and custom-level file IO.</span></li>
+                            <li><span class="structure-path">src/utils.py, src/__init__.py</span><span
+                                    class="structure-desc">Shared math/helpers and package metadata.</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Measured file metrics</h3>
+                <p><b>Longest modules:</b> <code>src/ui.py</code> (764), <code>src/entities.py</code> (512),
+                    <code>src/entity_renderer.py</code> (481), <code>src/game.py</code> (329),
+                    <code>src/physics.py</code> (320).
+                </p>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n2">2</span>Runtime Flow and Screen States</h2>
+                <div class="flow">
+                    <div class="node"><b>title</b><small>TitleScreen</small></div>
+                    <div class="arrow">-&gt;</div>
+                    <div class="node"><b>level_select</b><small>LevelSelect</small></div>
+                    <div class="arrow">-&gt;</div>
+                    <div class="node"><b>game</b><small>Game(level)</small></div>
+                </div>
+                <div class="flow" style="margin-top:0;">
+                    <div class="node"><b>guide</b><small>GuideScreen</small></div>
+                    <div class="arrow">&lt;-&gt;</div>
+                    <div class="node"><b>custom_levels</b><small>CustomLevelScreen</small></div>
+                    <div class="arrow">&lt;-&gt;</div>
+                    <div class="node"><b>title</b><small>Back navigation</small></div>
+                </div>
+
+                <p>Top-level state is managed by <code>App</code> in <code>run.py</code>. Rendering uses a fixed virtual
+                    canvas (720x1280) scaled to a resizable window with letterboxing.</p>
+
+                <h3>State transitions</h3>
+                <ul>
+                    <li><b>Title:</b> <code>Enter</code>/<code>Space</code> = level select, <code>G</code> = guide,
+                        <code>C</code> = custom levels.
+                    </li>
+                    <li><b>Level Select:</b> click level button to play, <code>Esc</code> back, number keys
+                        <code>1-9</code> quick select.
+                    </li>
+                    <li><b>Game:</b> <code>Esc</code> back to level select, <code>R</code> restart current level,
+                        <code>Space</code> next level on win.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n3">3</span>Gameplay Loop and Controls</h2>
+                <p><code>Game.update(dt)</code> (when playing) executes:</p>
+                <ul>
+                    <li>Continuous winch key-hold logic (Shift/Ctrl + rope letter).</li>
+                    <li>Physics step with 20 substeps.</li>
+                    <li>Candy animation update (squash/stretch).</li>
+                    <li>Target animation update (mouth/swallow state).</li>
+                    <li>Teleport cooldown updates.</li>
+                    <li>Magnet proximity check and dynamic rope spawn.</li>
+                    <li>Spider rope crawling and catch checks.</li>
+                    <li>Off-screen fail check (<code>y &lt; -100</code>, <code>x &lt; -100</code>,
+                        <code>x &gt; 820</code>).
+                    </li>
+                    <li>Renderer update (particles + stars).</li>
+                </ul>
+
+                <h3>Control map (current implementation)</h3>
+                <table>
+                    <tr>
+                        <th>Input</th>
+                        <th>Behavior</th>
+                        <th>Scope</th>
+                    </tr>
+                    <tr>
+                        <td><code>A-Z</code></td>
+                        <td>Cut rope with matching letter</td>
+                        <td>Game</td>
+                    </tr>
+                    <tr>
+                        <td><code>Shift+Letter</code></td>
+                        <td>Hold to retract matching winch rope</td>
+                        <td>Game</td>
+                    </tr>
+                    <tr>
+                        <td><code>Ctrl+Letter</code> / <code>Cmd+Letter</code></td>
+                        <td>Hold to extend matching winch rope</td>
+                        <td>Game</td>
+                    </tr>
+                    <tr>
+                        <td>Mouse drag on slider handle</td>
+                        <td>Move slider anchor along track</td>
+                        <td>Game</td>
+                    </tr>
+                    <tr>
+                        <td><code>R</code></td>
+                        <td>Restart level</td>
+                        <td>Game / Play test</td>
+                    </tr>
+                    <tr>
+                        <td><code>Space</code></td>
+                        <td>Advance to next campaign level (after win)</td>
+                        <td>Game</td>
+                    </tr>
+                    <tr>
+                        <td><code>Esc</code></td>
+                        <td>Return/back</td>
+                        <td>Game/UI screens</td>
+                    </tr>
+                </table>
+                <p><b>Important current behavior:</b> rope cutting is keyboard-based by letter. Mouse trail is visual
+                    feedback only.</p>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n4">4</span>Physics and Rope System</h2>
+                <p><b>Engine:</b> Pymunk space with gravity <code>(0, -900)</code>, damping <code>0.92</code>,
+                    iterations <code>30</code>.</p>
+
+                <h3>Rope construction</h3>
+                <ul>
+                    <li>Rope segment count: <code>max(2, int(length / 35))</code>.</li>
+                    <li>Each segment: dynamic body + sensor segment shape + PinJoint + DampedRotarySpring.</li>
+                    <li>Rope shapes share a collision filter group, so rope segments do not collide with each other.
+                    </li>
+                    <li>First joint links anchor to first segment; final PinJoint links last segment to candy.</li>
+                </ul>
+
+                <h3>Winch adjustment</h3>
+                <p><code>adjust_winch_rope()</code> rescales PinJoint distances and local anchors, updates segment
+                    endpoints, and stiffens rotary springs as rope retracts. This avoids unstable force spikes during
+                    rapid length changes.</p>
+
+                <h3>Collision callbacks and safety</h3>
+                <ul>
+                    <li>Callbacks are queued in <code>_post_step_actions</code> and flushed after stepping to avoid
+                        mutating space while locked.</li>
+                    <li>Rope segment velocity is clamped to <code>1500 px/s</code> to prevent explosive behavior.</li>
+                </ul>
+
+                <table>
+                    <tr>
+                        <th>Type ID</th>
+                        <th>Constant</th>
+                        <th>Entity</th>
+                        <th>Callback</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td><code>CT_CANDY</code></td>
+                        <td>Candy</td>
+                        <td>Primary collider</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><code>CT_TARGET</code></td>
+                        <td>Target</td>
+                        <td>Win trigger</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><code>CT_PLATFORM</code></td>
+                        <td>Platform</td>
+                        <td>Solid collision surface</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><code>CT_SPIKE</code></td>
+                        <td>Spike</td>
+                        <td>Lose trigger</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><code>CT_TELE_A</code></td>
+                        <td>Teleport A</td>
+                        <td>Portal enter from A</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><code>CT_TELE_B</code></td>
+                        <td>Teleport B</td>
+                        <td>Portal enter from B</td>
+                    </tr>
+                </table>
+            </article>
+
+            <article class="card full">
+                <h2><span class="num n5">5</span>Entity System (10 Types)</h2>
+                <table>
+                    <tr>
+                        <th>Type</th>
+                        <th>Role</th>
+                        <th>Key mechanics</th>
+                    </tr>
+                    <tr>
+                        <td><b>Candy</b></td>
+                        <td>Main dynamic object</td>
+                        <td>Mass 5, radius 14, squash/stretch visual response, collision type 1.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Target</b></td>
+                        <td>Win sink</td>
+                        <td>Sensor circle, 3 animation states (idle, swallowing, done), swallow duration 0.6s.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Anchor</b></td>
+                        <td>Static rope source</td>
+                        <td>Letter-labeled hook; active flag used to hide/disable visuals after cuts.</td>
+                    </tr>
+                    <tr>
+                        <td><b>MagnetAnchor</b></td>
+                        <td>Auto-attach source</td>
+                        <td>Inactive until candy enters radius; then creates rope dynamically and switches to active.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>SliderAnchor</b></td>
+                        <td>Mouse-drag hook</td>
+                        <td>Kinematic body constrained to track; projection + clamped <code>t</code> parameter.</td>
+                    </tr>
+                    <tr>
+                        <td><b>WinchAnchor</b></td>
+                        <td>Keyboard length control</td>
+                        <td>Min/max rope length 80/400; Shift retract, Ctrl/Cmd extend, plain key cuts.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Platform</b></td>
+                        <td>Static support</td>
+                        <td>Pymunk segment with friction 0.8 and elasticity 0.2.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Spike</b></td>
+                        <td>Hazard</td>
+                        <td>Directional triangular sensor shapes (up/down/left/right), immediate lose.</td>
+                    </tr>
+                    <tr>
+                        <td><b>TeleportPair</b></td>
+                        <td>Portal transport</td>
+                        <td>Two sensor circles; rotates velocity by angle delta and applies exit offset + cooldown.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Spider</b></td>
+                        <td>Pressure enemy</td>
+                        <td>Crawls along rope bodies over time and fails level on catch distance threshold.</td>
+                    </tr>
+                </table>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n6">6</span>Renderer Architecture (Post-Refactor)</h2>
+                <p>The rendering layer is now split so game logic and drawing are decoupled:</p>
+                <ul>
+                    <li><code>src/renderer.py</code>: virtual surface, gradient background, particles, starfield, mouse
+                        trail, scaling.</li>
+                    <li><code>src/entity_renderer.py</code>: all visuals for
+                        candy/target/anchors/platforms/spikes/teleports/spider/rope.</li>
+                    <li><code>src/game_renderer.py</code>: frame assembly order, HUD text, win/lose overlays, star
+                        medals.</li>
+                </ul>
+
+                <h3>Draw order in game frame</h3>
+                <p>Platforms -&gt; Spikes -&gt; Teleports -&gt; Ropes -&gt; Anchors -&gt; Spiders -&gt; Target -&gt;
+                    Candy (unless swallowed) -&gt; HUD -&gt; Win/Lose overlay.</p>
+
+                <h3>Visual systems</h3>
+                <p><span class="chip blue">STARFIELD</span><span class="chip amber">GRADIENT BG</span><span
+                        class="chip teal">PARTICLES</span><span class="chip slate">MOUSE TRAIL</span><span
+                        class="chip red">OVERLAYS</span></p>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n1">7</span>Campaign Levels (10)</h2>
+                <p>All levels are dict-based in <code>src/levels.py</code>, using Pymunk coordinates (origin at
+                    bottom-left).</p>
+                <div class="level-grid">
+                    <div class="level-card">
+                        <div class="id">LEVEL 01</div>
+                        <div class="name">First Cut</div>
+                        <div class="desc">Single rope intro. <code>star_times [3,6,15]</code></div>
+                        <div><span class="chip olive">Static Anchor</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 02</div>
+                        <div class="name">Double Swing</div>
+                        <div class="desc">Two anchors, timing and cut order matter.</div>
+                        <div><span class="chip olive">Multi-Rope</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 03</div>
+                        <div class="name">Bungee Drop</div>
+                        <div class="desc">Straight drop with shorter rope.</div>
+                        <div><span class="chip olive">Anchor</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 04</div>
+                        <div class="name">Magnetic Pull</div>
+                        <div class="desc">Magnet activates and creates rope on proximity.</div>
+                        <div><span class="chip blue">Magnet</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 05</div>
+                        <div class="name">Slide &amp; Drop</div>
+                        <div class="desc">Drag slider anchor on horizontal track.</div>
+                        <div><span class="chip teal">Slider</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 06</div>
+                        <div class="name">Winch Down</div>
+                        <div class="desc">Keyboard-controlled rope extension/retraction.</div>
+                        <div><span class="chip amber">Winch</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 07</div>
+                        <div class="name">Hat Trick</div>
+                        <div class="desc">Teleport pair introduces portal momentum transfer.</div>
+                        <div><span class="chip slate">Teleport</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 08</div>
+                        <div class="name">Spider Escape</div>
+                        <div class="desc">Spider crawls down rope; cut before catch.</div>
+                        <div><span class="chip red">Spider</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 09</div>
+                        <div class="name">Spike Dodge</div>
+                        <div class="desc">Hazard pathing with spikes and dual ropes.</div>
+                        <div><span class="chip red">Spikes</span></div>
+                    </div>
+                    <div class="level-card">
+                        <div class="id">LEVEL 10</div>
+                        <div class="name">Grand Finale</div>
+                        <div class="desc">Combo of slider, platform, spike, and teleport.</div>
+                        <div><span class="chip olive">Anchor</span><span class="chip teal">Slider</span><span
+                                class="chip red">Spikes</span><span class="chip slate">Teleport</span></div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n2">8</span>Persistence and Data Files</h2>
+                <p><code>src/savedata.py</code> manages score and custom-level persistence.</p>
+                <h3>Score model (current write path)</h3>
+                <ul>
+                    <li><code>data/scores.json</code> numeric level keys like <code>"0": {"time": 2.91}</code>.</li>
+                    <li>On win, score is saved only if new time is better.</li>
+                    <li>Star count is derived from per-level <code>star_times</code> thresholds.</li>
+                </ul>
+                <h3>Custom levels</h3>
+                <ul>
+                    <li><code>data/custom_levels.json</code> stores a list of level dicts compatible with
+                        <code>Game</code>.
+                    </li>
+                    <li>Current repository file is empty (<code>[]</code>), ready for editor-generated levels.</li>
+                </ul>
+                <h3>Compatibility note</h3>
+                <p>Existing <code>scores.json</code> includes legacy keys (<code>campaign_x</code>) alongside current
+                    numeric keys. Current gameplay reads numeric level indices for campaign best-time display.</p>
+            </article>
+
+            <article class="card full">
+                <h2><span class="num n3">9</span>Level Editor (v7) - Current Capabilities</h2>
+                <p><code>level_editor.py</code> is a standalone fullscreen editor that serializes directly into
+                    game-compatible JSON dictionaries.</p>
+
+                <div class="flow">
+                    <div class="node"><b>LEFT 160px</b><small>Tool palette + New/Save/PlayTest</small></div>
+                    <div class="arrow">|</div>
+                    <div class="node"><b>CENTER</b><small>Zoomable/pannable 720x1280 canvas</small></div>
+                    <div class="arrow">|</div>
+                    <div class="node"><b>RIGHT 250px</b><small>Level inputs + properties + saved list</small></div>
+                </div>
+
+                <h3>Tool palette</h3>
+                <p>
+                    <span class="chip slate">Select</span>
+                    <span class="chip red">Candy</span>
+                    <span class="chip teal">Target</span>
+                    <span class="chip olive">Anchor</span>
+                    <span class="chip blue">Magnet</span>
+                    <span class="chip slate">Slider</span>
+                    <span class="chip amber">Winch</span>
+                    <span class="chip slate">Platform</span>
+                    <span class="chip red">Spike</span>
+                    <span class="chip slate">Teleport</span>
+                    <span class="chip red">Spider</span>
+                </p>
+
+                <h3>Editor controls</h3>
+                <table>
+                    <tr>
+                        <th>Input</th>
+                        <th>Action</th>
+                    </tr>
+                    <tr>
+                        <td>Left Click</td>
+                        <td>Place/select entity (tool-dependent)</td>
+                    </tr>
+                    <tr>
+                        <td>Right Click</td>
+                        <td>Delete entity under cursor</td>
+                    </tr>
+                    <tr>
+                        <td>Middle mouse drag</td>
+                        <td>Pan canvas</td>
+                    </tr>
+                    <tr>
+                        <td>Scroll wheel</td>
+                        <td>Zoom in/out (canvas region)</td>
+                    </tr>
+                    <tr>
+                        <td><code>R</code></td>
+                        <td>Reset camera zoom/pan</td>
+                    </tr>
+                    <tr>
+                        <td><code>Delete</code>/<code>Backspace</code></td>
+                        <td>Remove selected entity</td>
+                    </tr>
+                    <tr>
+                        <td><code>F5</code></td>
+                        <td>Play-test level in-place</td>
+                    </tr>
+                    <tr>
+                        <td><code>Esc</code></td>
+                        <td>Quit editor / exit play-test</td>
+                    </tr>
+                </table>
+
+                <h3>Advanced property editing</h3>
+                <ul>
+                    <li>Teleport angle controls for entry and exit in 45 degree steps.</li>
+                    <li>Spider rope assignment buttons tied to current rope-producing anchors.</li>
+                    <li>Per-entity property inputs (letters, rope lengths, spike direction, magnet radius, etc.).</li>
+                    <li>Saved levels list with load and delete actions in right panel.</li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n4">10</span>Key Constants Snapshot (config.py)</h2>
+                <table>
+                    <tr>
+                        <th>Category</th>
+                        <th>Values</th>
+                    </tr>
+                    <tr>
+                        <td>Canvas/FPS</td>
+                        <td><code>WIDTH=720</code>, <code>HEIGHT=1280</code>, <code>FPS=60</code></td>
+                    </tr>
+                    <tr>
+                        <td>Physics</td>
+                        <td><code>GRAVITY=-900</code>, <code>PHYSICS_STEPS=20</code></td>
+                    </tr>
+                    <tr>
+                        <td>Rope</td>
+                        <td><code>ROPE_SEGMENT_LENGTH=35</code>, <code>ROPE_DAMPING=80</code>,
+                            <code>ROPE_ERROR_BIAS=0.2</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Candy</td>
+                        <td><code>MASS=5</code>, <code>RADIUS=14</code>, <code>FRICTION=0.85</code>,
+                            <code>ELASTICITY=0.2</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Winch</td>
+                        <td><code>MIN=80</code>, <code>MAX=400</code>, <code>SPEED=200 px/s</code></td>
+                    </tr>
+                    <tr>
+                        <td>Teleport</td>
+                        <td><code>RADIUS=32</code>, <code>COOLDOWN=0.8s</code>, <code>OFFSET=50</code></td>
+                    </tr>
+                    <tr>
+                        <td>Spider</td>
+                        <td><code>SPEED=60</code>, <code>CATCH_DIST=32</code></td>
+                    </tr>
+                    <tr>
+                        <td>Magnet</td>
+                        <td><code>RADIUS=90</code></td>
+                    </tr>
+                </table>
+            </article>
+
+            <article class="card">
+                <h2><span class="num n5">11</span>Current Notes</h2>
+                <ul>
+                    <li><b>README.md:</b> updated to reflect current controls, architecture, and level/editor workflow.
+                    </li>
+                    <li><b>validate_levels.py:</b> removed from this branch.</li>
+                    <li><b>Current win condition:</b> immediate on candy-target collision; no 2-second settle wait in
+                        runtime logic.</li>
+                    <li><b>Renderer refactor:</b> drawing now split across <code>renderer.py</code>,
+                        <code>entity_renderer.py</code>, and <code>game_renderer.py</code>.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="card full">
+                <h2><span class="num n6">12</span>Run and Development Commands</h2>
+                <div class="mono">
+                    # Install dependencies
+                    pip install -r requirements.txt
+
+                    # Run game
+                    python run.py
+
+                    # Run level editor
+                    python level_editor.py
+                </div>
+                <h3>Dependencies</h3>
+                <p><span class="chip blue">pygame-ce &gt;= 2.4.1</span> <span class="chip amber">pymunk &gt;=
+                        6.5.0</span></p>
+            </article>
+
+        </section>
+
+        <div class="footer">
+            This summary reflects current code paths in the repository at generation time. It is intended to replace
+            older project-summary documents.
         </div>
-
-        <div class="structure-block">
-          <h4>src/ Gameplay Core</h4>
-          <ul class="structure-items">
-            <li><span class="structure-path">src/config.py, src/types.py</span><span class="structure-desc">Central constants plus collision and game-state definitions.</span></li>
-            <li><span class="structure-path">src/levels.py</span><span class="structure-desc">Ten campaign level dictionaries and level access helpers.</span></li>
-            <li><span class="structure-path">src/entities.py</span><span class="structure-desc">Entity models and gameplay behavior for 10 mechanics.</span></li>
-            <li><span class="structure-path">src/physics.py</span><span class="structure-desc">Pymunk world wrapper, rope creation/cutting, collision setup.</span></li>
-            <li><span class="structure-path">src/input_handler.py, src/game.py</span><span class="structure-desc">Player input processing and per-level runtime loop.</span></li>
-          </ul>
-        </div>
-
-        <div class="structure-block">
-          <h4>src/ Rendering, UI, and Persistence</h4>
-          <ul class="structure-items">
-            <li><span class="structure-path">src/renderer.py</span><span class="structure-desc">Virtual canvas, background, particles, starfield, scaling.</span></li>
-            <li><span class="structure-path">src/entity_renderer.py, src/game_renderer.py</span><span class="structure-desc">Entity draw routines and whole-frame composition/HUD overlays.</span></li>
-            <li><span class="structure-path">src/ui.py</span><span class="structure-desc">Title, level-select, guide, and custom-level browser screens.</span></li>
-            <li><span class="structure-path">src/savedata.py</span><span class="structure-desc">Score persistence and custom-level file IO.</span></li>
-            <li><span class="structure-path">src/utils.py, src/__init__.py</span><span class="structure-desc">Shared math/helpers and package metadata.</span></li>
-          </ul>
-        </div>
-      </div>
-
-      <h3>Measured file metrics</h3>
-      <p><b>Longest modules:</b> <code>src/ui.py</code> (764), <code>src/entities.py</code> (512), <code>src/entity_renderer.py</code> (481), <code>src/game.py</code> (329), <code>src/physics.py</code> (320).</p>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n2">2</span>Runtime Flow and Screen States</h2>
-      <div class="flow">
-        <div class="node"><b>title</b><small>TitleScreen</small></div>
-        <div class="arrow">-&gt;</div>
-        <div class="node"><b>level_select</b><small>LevelSelect</small></div>
-        <div class="arrow">-&gt;</div>
-        <div class="node"><b>game</b><small>Game(level)</small></div>
-      </div>
-      <div class="flow" style="margin-top:0;">
-        <div class="node"><b>guide</b><small>GuideScreen</small></div>
-        <div class="arrow">&lt;-&gt;</div>
-        <div class="node"><b>custom_levels</b><small>CustomLevelScreen</small></div>
-        <div class="arrow">&lt;-&gt;</div>
-        <div class="node"><b>title</b><small>Back navigation</small></div>
-      </div>
-
-      <p>Top-level state is managed by <code>App</code> in <code>run.py</code>. Rendering uses a fixed virtual canvas (720x1280) scaled to a resizable window with letterboxing.</p>
-
-      <h3>State transitions</h3>
-      <ul>
-        <li><b>Title:</b> <code>Enter</code>/<code>Space</code> = level select, <code>G</code> = guide, <code>C</code> = custom levels.</li>
-        <li><b>Level Select:</b> click level button to play, <code>Esc</code> back, number keys <code>1-9</code> quick select.</li>
-        <li><b>Game:</b> <code>Esc</code> back to level select, <code>R</code> restart current level, <code>Space</code> next level on win.</li>
-      </ul>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n3">3</span>Gameplay Loop and Controls</h2>
-      <p><code>Game.update(dt)</code> (when playing) executes:</p>
-      <ul>
-        <li>Continuous winch key-hold logic (Shift/Ctrl + rope letter).</li>
-        <li>Physics step with 20 substeps.</li>
-        <li>Candy animation update (squash/stretch).</li>
-        <li>Target animation update (mouth/swallow state).</li>
-        <li>Teleport cooldown updates.</li>
-        <li>Magnet proximity check and dynamic rope spawn.</li>
-        <li>Spider rope crawling and catch checks.</li>
-        <li>Off-screen fail check (<code>y &lt; -100</code>, <code>x &lt; -100</code>, <code>x &gt; 820</code>).</li>
-        <li>Renderer update (particles + stars).</li>
-      </ul>
-
-      <h3>Control map (current implementation)</h3>
-      <table>
-        <tr><th>Input</th><th>Behavior</th><th>Scope</th></tr>
-        <tr><td><code>A-Z</code></td><td>Cut rope with matching letter</td><td>Game</td></tr>
-        <tr><td><code>Shift+Letter</code></td><td>Hold to retract matching winch rope</td><td>Game</td></tr>
-        <tr><td><code>Ctrl+Letter</code> / <code>Cmd+Letter</code></td><td>Hold to extend matching winch rope</td><td>Game</td></tr>
-        <tr><td>Mouse drag on slider handle</td><td>Move slider anchor along track</td><td>Game</td></tr>
-        <tr><td><code>R</code></td><td>Restart level</td><td>Game / Play test</td></tr>
-        <tr><td><code>Space</code></td><td>Advance to next campaign level (after win)</td><td>Game</td></tr>
-        <tr><td><code>Esc</code></td><td>Return/back</td><td>Game/UI screens</td></tr>
-      </table>
-      <p><b>Important current behavior:</b> rope cutting is keyboard-based by letter. Mouse trail is visual feedback only.</p>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n4">4</span>Physics and Rope System</h2>
-      <p><b>Engine:</b> Pymunk space with gravity <code>(0, -900)</code>, damping <code>0.92</code>, iterations <code>30</code>.</p>
-
-      <h3>Rope construction</h3>
-      <ul>
-        <li>Rope segment count: <code>max(2, int(length / 35))</code>.</li>
-        <li>Each segment: dynamic body + sensor segment shape + PinJoint + DampedRotarySpring.</li>
-        <li>Rope shapes share a collision filter group, so rope segments do not collide with each other.</li>
-        <li>First joint links anchor to first segment; final PinJoint links last segment to candy.</li>
-      </ul>
-
-      <h3>Winch adjustment</h3>
-      <p><code>adjust_winch_rope()</code> rescales PinJoint distances and local anchors, updates segment endpoints, and stiffens rotary springs as rope retracts. This avoids unstable force spikes during rapid length changes.</p>
-
-      <h3>Collision callbacks and safety</h3>
-      <ul>
-        <li>Callbacks are queued in <code>_post_step_actions</code> and flushed after stepping to avoid mutating space while locked.</li>
-        <li>Rope segment velocity is clamped to <code>1500 px/s</code> to prevent explosive behavior.</li>
-      </ul>
-
-      <table>
-        <tr><th>Type ID</th><th>Constant</th><th>Entity</th><th>Callback</th></tr>
-        <tr><td>1</td><td><code>CT_CANDY</code></td><td>Candy</td><td>Primary collider</td></tr>
-        <tr><td>2</td><td><code>CT_TARGET</code></td><td>Target</td><td>Win trigger</td></tr>
-        <tr><td>3</td><td><code>CT_PLATFORM</code></td><td>Platform</td><td>Solid collision surface</td></tr>
-        <tr><td>4</td><td><code>CT_SPIKE</code></td><td>Spike</td><td>Lose trigger</td></tr>
-        <tr><td>5</td><td><code>CT_TELE_A</code></td><td>Teleport A</td><td>Portal enter from A</td></tr>
-        <tr><td>6</td><td><code>CT_TELE_B</code></td><td>Teleport B</td><td>Portal enter from B</td></tr>
-      </table>
-    </article>
-
-    <article class="card full">
-      <h2><span class="num n5">5</span>Entity System (10 Types)</h2>
-      <table>
-        <tr><th>Type</th><th>Role</th><th>Key mechanics</th></tr>
-        <tr><td><b>Candy</b></td><td>Main dynamic object</td><td>Mass 5, radius 14, squash/stretch visual response, collision type 1.</td></tr>
-        <tr><td><b>Target</b></td><td>Win sink</td><td>Sensor circle, 3 animation states (idle, swallowing, done), swallow duration 0.6s.</td></tr>
-        <tr><td><b>Anchor</b></td><td>Static rope source</td><td>Letter-labeled hook; active flag used to hide/disable visuals after cuts.</td></tr>
-        <tr><td><b>MagnetAnchor</b></td><td>Auto-attach source</td><td>Inactive until candy enters radius; then creates rope dynamically and switches to active.</td></tr>
-        <tr><td><b>SliderAnchor</b></td><td>Mouse-drag hook</td><td>Kinematic body constrained to track; projection + clamped <code>t</code> parameter.</td></tr>
-        <tr><td><b>WinchAnchor</b></td><td>Keyboard length control</td><td>Min/max rope length 80/400; Shift retract, Ctrl/Cmd extend, plain key cuts.</td></tr>
-        <tr><td><b>Platform</b></td><td>Static support</td><td>Pymunk segment with friction 0.8 and elasticity 0.2.</td></tr>
-        <tr><td><b>Spike</b></td><td>Hazard</td><td>Directional triangular sensor shapes (up/down/left/right), immediate lose.</td></tr>
-        <tr><td><b>TeleportPair</b></td><td>Portal transport</td><td>Two sensor circles; rotates velocity by angle delta and applies exit offset + cooldown.</td></tr>
-        <tr><td><b>Spider</b></td><td>Pressure enemy</td><td>Crawls along rope bodies over time and fails level on catch distance threshold.</td></tr>
-      </table>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n6">6</span>Renderer Architecture (Post-Refactor)</h2>
-      <p>The rendering layer is now split so game logic and drawing are decoupled:</p>
-      <ul>
-        <li><code>src/renderer.py</code>: virtual surface, gradient background, particles, starfield, mouse trail, scaling.</li>
-        <li><code>src/entity_renderer.py</code>: all visuals for candy/target/anchors/platforms/spikes/teleports/spider/rope.</li>
-        <li><code>src/game_renderer.py</code>: frame assembly order, HUD text, win/lose overlays, star medals.</li>
-      </ul>
-
-      <h3>Draw order in game frame</h3>
-      <p>Platforms -&gt; Spikes -&gt; Teleports -&gt; Ropes -&gt; Anchors -&gt; Spiders -&gt; Target -&gt; Candy (unless swallowed) -&gt; HUD -&gt; Win/Lose overlay.</p>
-
-      <h3>Visual systems</h3>
-      <p><span class="chip blue">STARFIELD</span><span class="chip amber">GRADIENT BG</span><span class="chip teal">PARTICLES</span><span class="chip slate">MOUSE TRAIL</span><span class="chip red">OVERLAYS</span></p>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n1">7</span>Campaign Levels (10)</h2>
-      <p>All levels are dict-based in <code>src/levels.py</code>, using Pymunk coordinates (origin at bottom-left).</p>
-      <div class="level-grid">
-        <div class="level-card"><div class="id">LEVEL 01</div><div class="name">First Cut</div><div class="desc">Single rope intro. <code>star_times [3,6,15]</code></div><div><span class="chip olive">Static Anchor</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 02</div><div class="name">Double Swing</div><div class="desc">Two anchors, timing and cut order matter.</div><div><span class="chip olive">Multi-Rope</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 03</div><div class="name">Bungee Drop</div><div class="desc">Straight drop with shorter rope.</div><div><span class="chip olive">Anchor</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 04</div><div class="name">Magnetic Pull</div><div class="desc">Magnet activates and creates rope on proximity.</div><div><span class="chip blue">Magnet</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 05</div><div class="name">Slide &amp; Drop</div><div class="desc">Drag slider anchor on horizontal track.</div><div><span class="chip teal">Slider</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 06</div><div class="name">Winch Down</div><div class="desc">Keyboard-controlled rope extension/retraction.</div><div><span class="chip amber">Winch</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 07</div><div class="name">Hat Trick</div><div class="desc">Teleport pair introduces portal momentum transfer.</div><div><span class="chip slate">Teleport</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 08</div><div class="name">Spider Escape</div><div class="desc">Spider crawls down rope; cut before catch.</div><div><span class="chip red">Spider</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 09</div><div class="name">Spike Dodge</div><div class="desc">Hazard pathing with spikes and dual ropes.</div><div><span class="chip red">Spikes</span></div></div>
-        <div class="level-card"><div class="id">LEVEL 10</div><div class="name">Grand Finale</div><div class="desc">Combo of slider, platform, spike, and teleport.</div><div><span class="chip olive">Anchor</span><span class="chip teal">Slider</span><span class="chip red">Spikes</span><span class="chip slate">Teleport</span></div></div>
-      </div>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n2">8</span>Persistence and Data Files</h2>
-      <p><code>src/savedata.py</code> manages score and custom-level persistence.</p>
-      <h3>Score model (current write path)</h3>
-      <ul>
-        <li><code>data/scores.json</code> numeric level keys like <code>"0": {"time": 2.91}</code>.</li>
-        <li>On win, score is saved only if new time is better.</li>
-        <li>Star count is derived from per-level <code>star_times</code> thresholds.</li>
-      </ul>
-      <h3>Custom levels</h3>
-      <ul>
-        <li><code>data/custom_levels.json</code> stores a list of level dicts compatible with <code>Game</code>.</li>
-        <li>Current repository file is empty (<code>[]</code>), ready for editor-generated levels.</li>
-      </ul>
-      <h3>Compatibility note</h3>
-      <p>Existing <code>scores.json</code> includes legacy keys (<code>campaign_x</code>) alongside current numeric keys. Current gameplay reads numeric level indices for campaign best-time display.</p>
-    </article>
-
-    <article class="card full">
-      <h2><span class="num n3">9</span>Level Editor (v7) - Current Capabilities</h2>
-      <p><code>level_editor.py</code> is a standalone fullscreen editor that serializes directly into game-compatible JSON dictionaries.</p>
-
-      <div class="flow">
-        <div class="node"><b>LEFT 160px</b><small>Tool palette + New/Save/PlayTest</small></div>
-        <div class="arrow">|</div>
-        <div class="node"><b>CENTER</b><small>Zoomable/pannable 720x1280 canvas</small></div>
-        <div class="arrow">|</div>
-        <div class="node"><b>RIGHT 250px</b><small>Level inputs + properties + saved list</small></div>
-      </div>
-
-      <h3>Tool palette</h3>
-      <p>
-        <span class="chip slate">Select</span>
-        <span class="chip red">Candy</span>
-        <span class="chip teal">Target</span>
-        <span class="chip olive">Anchor</span>
-        <span class="chip blue">Magnet</span>
-        <span class="chip slate">Slider</span>
-        <span class="chip amber">Winch</span>
-        <span class="chip slate">Platform</span>
-        <span class="chip red">Spike</span>
-        <span class="chip slate">Teleport</span>
-        <span class="chip red">Spider</span>
-      </p>
-
-      <h3>Editor controls</h3>
-      <table>
-        <tr><th>Input</th><th>Action</th></tr>
-        <tr><td>Left Click</td><td>Place/select entity (tool-dependent)</td></tr>
-        <tr><td>Right Click</td><td>Delete entity under cursor</td></tr>
-        <tr><td>Middle mouse drag</td><td>Pan canvas</td></tr>
-        <tr><td>Scroll wheel</td><td>Zoom in/out (canvas region)</td></tr>
-        <tr><td><code>R</code></td><td>Reset camera zoom/pan</td></tr>
-        <tr><td><code>Delete</code>/<code>Backspace</code></td><td>Remove selected entity</td></tr>
-        <tr><td><code>F5</code></td><td>Play-test level in-place</td></tr>
-        <tr><td><code>Esc</code></td><td>Quit editor / exit play-test</td></tr>
-      </table>
-
-      <h3>Advanced property editing</h3>
-      <ul>
-        <li>Teleport angle controls for entry and exit in 45 degree steps.</li>
-        <li>Spider rope assignment buttons tied to current rope-producing anchors.</li>
-        <li>Per-entity property inputs (letters, rope lengths, spike direction, magnet radius, etc.).</li>
-        <li>Saved levels list with load and delete actions in right panel.</li>
-      </ul>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n4">10</span>Key Constants Snapshot (config.py)</h2>
-      <table>
-        <tr><th>Category</th><th>Values</th></tr>
-        <tr><td>Canvas/FPS</td><td><code>WIDTH=720</code>, <code>HEIGHT=1280</code>, <code>FPS=60</code></td></tr>
-        <tr><td>Physics</td><td><code>GRAVITY=-900</code>, <code>PHYSICS_STEPS=20</code></td></tr>
-        <tr><td>Rope</td><td><code>ROPE_SEGMENT_LENGTH=35</code>, <code>ROPE_DAMPING=80</code>, <code>ROPE_ERROR_BIAS=0.2</code></td></tr>
-        <tr><td>Candy</td><td><code>MASS=5</code>, <code>RADIUS=14</code>, <code>FRICTION=0.85</code>, <code>ELASTICITY=0.2</code></td></tr>
-        <tr><td>Winch</td><td><code>MIN=80</code>, <code>MAX=400</code>, <code>SPEED=200 px/s</code></td></tr>
-        <tr><td>Teleport</td><td><code>RADIUS=32</code>, <code>COOLDOWN=0.8s</code>, <code>OFFSET=50</code></td></tr>
-        <tr><td>Spider</td><td><code>SPEED=60</code>, <code>CATCH_DIST=32</code></td></tr>
-        <tr><td>Magnet</td><td><code>RADIUS=90</code></td></tr>
-      </table>
-    </article>
-
-    <article class="card">
-      <h2><span class="num n5">11</span>Current Known Drift / Legacy Artifacts</h2>
-      <ul>
-        <li><b>README.md is outdated:</b> still describes 6 levels and older controls/architecture.</li>
-        <li><b>validate_levels.py is legacy:</b> imports <code>LevelManager</code> from <code>src.levels</code>, but current <code>src.levels.py</code> is dict-based and has no <code>LevelManager</code>.</li>
-        <li><b>Current win condition:</b> immediate on candy-target collision; no 2-second settle wait in runtime logic.</li>
-        <li><b>Renderer refactor:</b> drawing now split across <code>renderer.py</code>, <code>entity_renderer.py</code>, and <code>game_renderer.py</code>.</li>
-      </ul>
-    </article>
-
-    <article class="card full">
-      <h2><span class="num n6">12</span>Run and Development Commands</h2>
-      <div class="mono">
-# Install dependencies
-pip install -r requirements.txt
-
-# Run game
-python run.py
-
-# Run level editor
-python level_editor.py
-
-# Legacy validator (currently not aligned with current level module)
-python validate_levels.py
-      </div>
-      <h3>Dependencies</h3>
-      <p><span class="chip blue">pygame-ce &gt;= 2.4.1</span> <span class="chip amber">pymunk &gt;= 6.5.0</span></p>
-    </article>
-
-  </section>
-
-  <div class="footer">
-    This summary reflects current code paths in the repository at generation time. It is intended to replace older project-summary documents.
-  </div>
-</main>
+    </main>
 
 </body>
+
 </html>

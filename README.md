@@ -1,301 +1,275 @@
-# 🎮 Cut The Rope
+# Cut The Rope
 
 <div align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Pygame](https://img.shields.io/badge/Pygame-ce-2.4+-green.svg)
 ![Pymunk](https://img.shields.io/badge/Pymunk-6.5+-orange.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-*A physics-based puzzle game where you cut ropes to guide a candy ball into a target box.*
-
-[Game Design Presentation](cut-the-rope-presentation.html) • [Play Now](#-getting-started)
+A physics puzzle game built with Python, pygame-ce, and pymunk.
 
 </div>
 
 ---
 
-## 📸 Overview
+## Overview
 
-**Cut The Rope** is a puzzle game that challenges players to use physics and timing to solve levels. The candy hangs from ropes attached to anchors - your job is to cut the ropes at the right moment to let gravity and momentum guide the candy into the target box.
+Cut The Rope is a 2D physics puzzle game where you guide a candy into Om Nom by cutting labeled ropes and using level mechanics like magnets, sliders, winches, teleports, spikes, and spiders.
 
-Built with **Python**, **pygame-ce**, and **pymunk** for realistic 2D physics simulation.
+Current implementation highlights:
 
-### ✨ Key Features
-
-- 🔗 **Realistic Rope Physics** - Chains swing and respond to cuts naturally using Pymunk physics engine
-- 🎯 **Progressive Difficulty** - 6 handcrafted levels introducing new mechanics gradually
-- ⚡ **Responsive Controls** - Cut ropes with mouse slashes or keyboard letters
-- 🎨 **Clean Visual Design** - Dark space theme with vibrant colors and particle effects
-- 🛠️ **Built-in Level Editor** - Create and share your own custom levels
-- 🔄 **Quick Reset** - Instantly retry levels with the R key
+- 10 campaign levels in `src/levels.py`
+- 10 entity types in `src/entities.py`
+- 5 app screens: title, level_select, guide, custom_levels, game
+- Built-in fullscreen level editor (`level_editor.py`, v7 rewrite)
+- Persistent best-time + star tracking in `data/scores.json`
+- Custom level save/load in `data/custom_levels.json`
 
 ---
 
-## 🚀 Getting Started
+## Quick Start
 
-### Prerequisites
+### Requirements
 
-- **Python 3.10 or higher**
-- **pip** (Python package installer)
+- Python 3.10+
+- pip
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/cut-the-rope.git
-cd cut-the-rope
-```
-
-2. Create a virtual environment (recommended):
-```bash
+git clone https://github.com/Hevarh1/Cut-The-Rope-Uni-Project.git
+cd Cut-The-Rope-Uni-Project
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 🎮 How to Play
+### Run
 
-Run the game:
 ```bash
+# Start game
 python run.py
-```
 
-#### Objective
-Cut the ropes holding the candy to swing and drop it into the green target box. The candy must **settle** (stay inside for 2 seconds) to win!
-
-#### Controls
-
-| Action | Key/Mouse |
-|--------|-----------|
-| Cut Rope | Mouse drag / Letter keys (A, B, C...) |
-| Restart Level | `R` |
-| Toggle Instructions | `I` |
-| Level Select | `1-6` number keys |
-| Quit | `ESC` |
-
-#### Strategy Tips
-
-1. **Observe** the rope configuration and target location
-2. **Plan** which rope to cut first to create the right swing
-3. **Time** your cuts to use momentum and gravity effectively
-4. **Avoid** red spike hazards - they reset the level!
-5. **Use** platforms to bounce and redirect the candy
-
----
-
-## 🎯 Levels
-
-| Level | Description | Challenge |
-|-------|-------------|-----------|
-| **Level 1** | Simple Drop | Learn the basic mechanic - cut the single rope |
-| **Level 2** | Double Swing | Use momentum from two ropes to reach the target |
-| **Level 3** | Obstacle Course | Navigate around platforms and barriers |
-| **Level 4** | Precision | Time your cuts perfectly for the right arc |
-| **Level 5** | Hazard Warning | Avoid deadly spikes while solving the puzzle |
-| **Level 6** | Master Challenge | Combine all skills in a complex multi-rope setup |
-
----
-
-## 🛠️ Level Editor
-
-Create your own puzzles with the built-in visual level editor!
-
-### Running the Editor
-
-```bash
+# Start level editor
 python level_editor.py
 ```
 
-### Editor Controls
+---
 
-| Key | Action |
-|-----|--------|
-| `1` | Place Candy (starting position) |
-| `2` | Place Anchor (rope attachment point) |
-| `3` | Place Target Box (click twice for corners) |
-| `4` | Place Platform (click twice for corners) |
-| `5` | Place Spike (hazard) |
-| `Left Click` | Place selected object |
-| `Right Click` | Delete object at mouse |
-| `S` | Print level code to console |
-| `C` | Clear all objects |
-| `ESC` | Quit editor |
+## Controls
 
-### Adding Your Level
+### Title Screen
 
-1. Design your level in the editor
-2. Press `S` to get the level code
-3. Copy the generated `LevelData` code
-4. Open `src/levels.py`
-5. Paste it into the `_create_levels()` method
-6. Add it to the return list
+| Input | Action |
+|---|---|
+| Enter or Space | Open Level Select |
+| G | Open Guide |
+| C | Open Custom Levels |
+| Mouse click | Use menu buttons |
 
-```python
-# Example in src/levels.py
-def _create_levels():
-    level_1 = LevelData(
-        candy_pos=(600, 450),
-        anchors=[...],
-        target=...
-    )
+### Level Select
 
-    your_level = LevelData(
-        candy_pos=(600, 400),
-        anchors=[(700, 600, 'A'), (500, 600, 'B')],
-        ...
-    )
+| Input | Action |
+|---|---|
+| Mouse click | Start selected campaign level |
+| 1-9 | Quick select level |
+| Esc | Back to Title |
 
-    return [level_1, level_2, your_level]
-```
+### In Game
+
+| Input | Action |
+|---|---|
+| A-Z | Cut rope with matching letter |
+| Shift + Letter | Retract matching winch rope (hold) |
+| Ctrl/Cmd + Letter | Extend matching winch rope (hold) |
+| Mouse drag on slider handle | Move slider anchor along track |
+| R | Restart current level |
+| Space (after win) | Next campaign level |
+| Esc | Return to level select |
+
+### Guide and Custom Levels Screens
+
+| Input | Action |
+|---|---|
+| Scroll wheel / Up / Down | Scroll content |
+| Esc | Back |
 
 ---
 
-## 🏗️ Architecture
+## Campaign Levels
 
-### Project Structure
+All levels are defined as dictionaries in `src/levels.py`.
 
-```
+| # | Name | Main mechanic introduced |
+|---|---|---|
+| 1 | First Cut | Static anchor + basic rope cutting |
+| 2 | Double Swing | Multi-rope timing |
+| 3 | Bungee Drop | Precision drop timing |
+| 4 | Magnetic Pull | Magnet auto-attach |
+| 5 | Slide & Drop | Slider anchor |
+| 6 | Winch Down | Winch rope extension/retraction |
+| 7 | Hat Trick | Teleport pair |
+| 8 | Spider Escape | Spider chase on rope |
+| 9 | Spike Dodge | Spike hazard routing |
+| 10 | Grand Finale | Combined mechanics |
+
+---
+
+## Level Editor (v7)
+
+The editor is a standalone fullscreen tool that saves directly to `data/custom_levels.json` in game-compatible format.
+
+Layout:
+
+- Left panel (160px): tool palette, New, Save, Play Test
+- Center panel: zoomable/pannable 720x1280 canvas
+- Right panel (250px): level metadata, property editors, saved levels
+
+### Tool Hotkeys
+
+| Key | Tool |
+|---|---|
+| S | Select |
+| C | Candy |
+| T | Target |
+| A | Anchor |
+| M | Magnet |
+| L | Slider |
+| W | Winch |
+| P | Platform |
+| K | Spike |
+| O | Teleport |
+| D | Spider |
+
+### Editor Interaction
+
+| Input | Action |
+|---|---|
+| Left click | Place/select entity |
+| Right click | Delete entity under cursor |
+| Drag (Select mode) | Move selected entity |
+| Scroll wheel | Zoom canvas |
+| Middle mouse drag | Pan canvas |
+| R | Reset camera |
+| Delete/Backspace | Remove selected entity |
+| F5 | Play test current level |
+| Esc | Quit editor |
+
+Play test mode supports:
+
+- Esc: return to editor
+- R: restart play test
+- Space: return to editor after winning
+
+---
+
+## Project Structure
+
+```text
 cut-the-rope/
-├── src/
-│   ├── config.py          # Game configuration & constants
-│   ├── entities.py        # Entity classes (Candy, Rope, etc.)
-│   ├── game.py            # Main game loop & state management
-│   ├── levels.py          # Level definitions
-│   ├── physics.py         # Pymunk physics engine wrapper
-│   ├── renderer.py        # Pygame rendering
-│   ├── ui.py              # UI components & menus
-│   └── utils.py           # Utility functions
-├── level_editor.py        # Visual level editor
-├── run.py                 # Game entry point
-├── requirements.txt       # Python dependencies
-├── README.md              # This file
-└── cut-the-rope-presentation.html  # Game Design Analysis
+    run.py
+    level_editor.py
+    requirements.txt
+    data/
+        scores.json
+        custom_levels.json
+    src/
+        __init__.py
+        config.py
+        entities.py
+        entity_renderer.py
+        game.py
+        game_renderer.py
+        input_handler.py
+        levels.py
+        physics.py
+        renderer.py
+        savedata.py
+        types.py
+        ui.py
+        utils.py
 ```
 
-### Technical Details
+Module roles:
 
-#### Physics Engine (Pymunk)
-- **Gravity**: -900 px/s² (downward acceleration)
-- **Sub-stepping**: 4 physics steps per frame for stability
-- **Rope Simulation**: PinJoint constraints with damping
-- **Collision**: Category-based collision filtering
-
-#### Coordinate Systems
-- **Pymunk**: Bottom-left origin (Y increases upward)
-- **Pygame**: Top-left origin (Y increases downward)
-- **Conversion**: `pygame_to_pymunk()` and `pymunk_to_pygame()` utilities
-
-#### Rope Cutting Algorithm
-```python
-def line_segment_intersection(p1, p2, p3, p4):
-    """Check if line segment (p1,p2) intersects (p3,p4)"""
-    # Uses standard line intersection formula
-    # Returns True if lines cross, False otherwise
-```
-
-#### Win Detection
-1. Collision sensor detects candy entering target
-2. Timer starts when candy is inside
-3. Candy must have velocity < 80 px/s (settled)
-4. Win after 2 seconds of continuous settlement
+- `run.py`: application state machine and screen routing
+- `src/game.py`: per-level gameplay runtime
+- `src/physics.py`: pymunk world, rope creation/cutting, collision callbacks
+- `src/input_handler.py`: gameplay input handling
+- `src/entities.py`: game entity logic and state
+- `src/renderer.py`: virtual canvas, particles, starfield, scaling
+- `src/entity_renderer.py`: per-entity drawing
+- `src/game_renderer.py`: frame composition, HUD, win/lose overlays
+- `src/ui.py`: title/level-select/guide/custom-level screens
+- `src/savedata.py`: score and custom-level persistence
 
 ---
 
-## 🎨 Game Design
+## Technical Notes
 
-This game was developed as part of a Game Design course, analyzing core game design principles:
+- Virtual canvas: 720x1280
+- Physics: gravity -900, 20 substeps/frame, space damping 0.92
+- Rope simulation: PinJoint chains + DampedRotarySpring per segment
+- Rope segments are sensors and use shape-filter groups
+- Collision callbacks are deferred until after physics stepping
+- Win condition is immediate candy-target collision (with swallow animation)
 
-- **MDA Framework**: Mechanics → Dynamics → Aesthetics
-- **Bartle Player Types**: Targeted at Achievers & Explorers
-- **Flow Theory**: Progressive difficulty maintains player engagement
-- **Schema Theory**: Teaching patterns through level progression
+Coordinate systems:
 
-View the full [Game Design Analysis Presentation](cut-the-rope-presentation.html) for an in-depth look at the design decisions behind Cut The Rope.
-
----
-
-## 🧪 Testing
-
-Run the test suite:
-
-```bash
-python -m pytest uniTest/
-```
-
-Or run specific tests:
-```bash
-python -m pytest uniTest/test_physics.py -v
-```
+- Pymunk uses bottom-left origin
+- Pygame uses top-left origin
+- Conversion helpers are in `src/utils.py`
 
 ---
 
-## 📚 Dependencies
+## Data and Persistence
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| **pygame-ce** | ≥2.4.1 | Modern Python game library |
-| **pymunk** | ≥6.5.0 | 2D physics engine based on Chipmunk |
+- `data/scores.json`
+    - Campaign best times are saved by numeric level key (for example, `"0": {"time": 3.42}`)
+    - Stars are calculated from each level's `star_times`
+- `data/custom_levels.json`
+    - List of editor-created level dictionaries
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Ideas for Contributions
-
-- 🌟 New levels (easy, medium, hard)
-- 🎨 New visual themes or skins
-- 🚧 New obstacle types (springs, fans, teleports)
-- 🏆 Achievement system
-- 📊 Level statistics and analytics
-- 🎵 Sound effects and music
+Note: existing `scores.json` may contain older key formats from previous versions alongside current keys.
 
 ---
 
-## 👥 Team
+## Dependencies
 
-**Developed by:**
-- **Muhammad Yaseen** 
-- **Hevar Hemin** 
-- **Revar Azim**
-
-**Supervisor:** Mrs. Rina D. Zarro
-
-**Course:** Game Design - University of Salahaddin - Erbil
+| Package | Version |
+|---|---|
+| pygame-ce | >= 2.4.1 |
+| pymunk | >= 6.5.0 |
 
 ---
 
-## 📄 License
+## Testing
 
-This project is open source and available under the [MIT License](LICENSE).
+There is currently no formal automated test suite configured for the refactored game modules.
 
----
-
-## 🙏 Acknowledgments
-
-- **Pymunk** - Excellent 2D physics engine
-- **Pygame-ce** - Modern community-driven Pygame fork
-- **Cut the Rope** (ZeptoLab) - Inspiration for this project
-- Game Design course materials and lectures
+- `uniTest/` contains small experimental scripts.
+- Level checks are currently done through play testing in the editor (`F5`) and in-game testing.
 
 ---
 
-<div align="center">
+## Team
 
-**Enjoy the game! 🎮**
+Developed by:
 
-[Report Bug](../../issues) • [Request Feature](../../issues) • [Game Design Presentation](cut-the-rope-presentation.html)
+- Muhammad Yaseen
+- Hevar Hemin
+- Revar Azim
 
-</div>
+Supervisor: Mrs. Rina D. Zarro
+
+Course: Game Design, University of Salahaddin, Erbil
+
+---
+
+## Repository Resources
+
+- `PROJECT_SUMMARY.html`
+- `architecture-presentation.html`
+- `game_doc.md`
+- `game_components.md`
+
